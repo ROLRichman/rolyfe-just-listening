@@ -1,55 +1,121 @@
 # RO’Lyfe JUST LISTENING™
 
-A cozy, listener-first audio destination for live radio discovery, trending music metadata, podcasts, a personal Listening List, and a Hip-Hop Vault.
+A listener-first, mobile-friendly audio lounge for global radio, Hip-Hop and R&B discovery, Caribbean stations, podcasts, artist exploration, and a personal listening shelf.
 
-## First experience and Atlas
-- A welcome greeting appears about 2–3 seconds after page load.
-- Atlas opens after about 5 seconds with spoken guidance and quick listening choices.
-- Atlas has an explicit AI ON/OFF control. The preference is saved locally; when OFF, the assistant panel and speech are disabled. The sticky header and floating Atlas control remain available to turn it back ON.
-- Atlas uses the best available English browser voice, with tuned speaking speed and pitch. Voice quality depends on the speech engine installed on the visitor's device.
-- Optional Talk to Atlas uses browser speech recognition when supported. Microphone permission is requested only after the visitor taps the control.
-- The Atlas panel is fixed to the viewport and remains in position while the visitor scrolls. A Back to Top control appears after scrolling down.
-- Visitors can browse as guests; no account is required.
+**Repository:** https://github.com/ROLRichman/rolyfe-just-listening  
+**Main page:** `index.html`  
+**Style:** `listening.css`  
+**Application logic:** `listening.js`
 
-## Listening features
-- Live Radio reuses the RO’Lyfe Gaming Radio player and Radio Browser-backed station directory.
-- Popular & Trending uses Last.fm discovery metadata with Spotify and YouTube Music search links.
-- Podcast Lounge searches podcast listings and links to the show/publisher.
-- My Listening List stores saved tracks, albums and podcasts in the current browser.
-- Listen While You Play links to RO’Lyfe Gaming and the Live Sports Center.
+## What visitors can do
 
-## Hip-Hop Vault
-A starter collection includes Nas, KRS-One, Kendrick Lamar, JID, J. Cole, Jeru the Damaja, Brand Nubian, Gang Starr, Pete Rock, Redman, Keith Murray, Erick Sermon, O.C., Slick Rick, D-Nice, Rakim, Kool G Rap, Scarface, Special Ed, Cocoa Brovaz, OGC, Buckshot, Boot Camp Clik, Black Thought, Sa-Roc, Mos Def / Yasiin Bey, and more searchable artists.
+- Browse live radio by genre and Caribbean island/region.
+- Listen to Hip-Hop, old-school, East Coast, West Coast, Southern rap, drill, R&B, Neo-Soul, reggae, dancehall, soca, kompa/zouk, Afrobeats, lo-fi and smooth jazz stations.
+- Discover popular tracks and artists.
+- Explore artist biographies, listener statistics, popular albums, top tracks, related artists and catalog counts.
+- Search podcasts by host, topic or category and save shows to a personal list.
+- Save tracks, albums and podcasts without creating an account.
+- Use Atlas as an optional listening guide, with browser speech and optional microphone input.
+- Open RO’Lyfe Gaming, Live Sports and other RO’Lyfe destinations from the project menu.
+- Keep radio controls visible when supported games enter fullscreen.
 
-The existing Last.fm Edge Function supplies artist search, artist profiles, similar artists, popular tracks and popular albums. The new `entertainment-musicbrainz` Supabase Edge Function looks up album/EP release-group counts by artist MusicBrainz ID or name. MusicBrainz requests are serialized to respect its public one-request-per-second service limit.
+## How the mechanics work
 
-Album counts are catalog counts, not a promise that every edition, alias or collaboration has been matched. Popular albums from Last.fm are a popularity list, not necessarily a complete discography.
+### 1. Live radio
 
-## Project directory
-The RO’Lyfe Projects dropdown includes direct destinations and links to all 47 repositories accessible to the connected GitHub account at the time it was built. The list is grouped by markets/scanners/trading, property/capital/deals, business/education/labs, and other projects. It includes direct links to the Live Sports Center, Scanner Desk, Scanner Hub, Chart Wars and Market Terminal.
+The page loads the shared radio player from the RO’Lyfe Gaming repository:
 
-Repository links are source-code links. A repository existing on GitHub does not by itself mean its GitHub Pages deployment is enabled or that the project is complete.
+`https://rolrichman.github.io/rolyfe-egaming/shared/radio-player.js`
 
-## Playback, voice and rights
-Last.fm provides discovery metadata, not full track playback. Selected tracks therefore link to authorized listening services rather than being copied or streamed by this site. Radio stations are independent broadcasters and may include their own programming, sponsorships or advertising. Station availability and audio formats vary.
+That shared script mounts a floating radio player on the page. It requests station listings through the `rolyfe-radio-browser` Supabase Edge Function, which acts as the server-side directory connection. The browser receives station metadata and HTTPS stream addresses, then plays the selected broadcaster through an HTML audio element.
 
-Atlas currently uses the browser's speech synthesis and speech-recognition features. The site does not currently call a neural text-to-speech provider or a general-purpose chat model. For more human-like neural speech and fully open-ended conversation, a server-side AI/TTS provider and its protected API credential would be a separate integration. Do not place an OpenAI, ElevenLabs, Last.fm or other private secret in this public repository.
+The player supports genre and island/region filters, station selection, next station, play/pause, mute and volume. It remembers the visitor’s radio preferences and last station in browser storage. It attempts a direct secure stream first, then tries a resolved station URL when needed.
 
-Podcast listings link to their publisher or directory; they do not imply ownership or hosting. Do not rehost or rebroadcast music or podcast audio without the necessary rights.
+Radio stations are independent broadcasters. Availability, stream format, reliability and programming are controlled by each station. Some streams may not work on every browser or device. Mobile browsers may require a user tap before audio can begin.
 
-MusicBrainz offers its API without an API key for non-commercial use, requires an identifiable User-Agent and limits clients to one request per second. Check MusicBrainz commercial terms before using this data in a monetized product.
+### 2. Music discovery and artist profiles
 
-## GitHub Pages
-Repository: https://github.com/ROLRichman/rolyfe-just-listening
+The frontend calls the `entertainment-lastfm` Supabase Edge Function for Last.fm discovery data. The server-side function is where the private Last.fm API credential belongs; it must never be placed in this public repository or browser JavaScript.
 
-In repository Settings → Pages, choose Deploy from a branch, select main and /(root), then Save.
+Last.fm supplies metadata such as popular tracks, artist matches, biographies, listener/play counts, popular albums, top tracks and similar artists. The site links visitors to Spotify and YouTube Music search results for authorized listening. Last.fm metadata is not a music-streaming license and does not provide full track playback here.
 
-Expected public URL:
+### 3. Album and EP catalog counts
+
+The frontend calls the `entertainment-musicbrainz` Supabase Edge Function to look up release-group counts for an artist. MusicBrainz is used for catalog research; its count is not a guarantee of a complete discography. Aliases, collaborations, editions and artist-name matching can affect results.
+
+The backend should serialize MusicBrainz requests to respect its public rate limit. Review MusicBrainz terms before using the data in a commercial product.
+
+### 4. Podcast search
+
+Podcast search currently uses the Apple iTunes Search API from the browser. Results show show artwork, title, publisher and category, with links to the publisher or podcast listing. The current implementation is discovery and bookmarking—not a hosted podcast player. Episode playback can be added later using publisher RSS feeds or an authorized podcast provider.
+
+### 5. My Listening List
+
+Saved tracks, albums and podcasts are stored in the visitor’s browser using `localStorage`. This means guest mode works without registration, but the list is device- and browser-specific. Clearing site data or changing devices can remove or separate saved items. Cloud synchronization and cross-device profiles are future enhancements, not current functionality.
+
+### 6. Atlas listening guide
+
+Atlas currently runs in the browser. It uses speech synthesis for spoken guidance and browser speech recognition when supported and explicitly enabled by the visitor. Microphone access is requested only after the visitor chooses Talk to Atlas.
+
+The ON/OFF preference is stored locally. Turning Atlas off disables its panel and speech; the visitor can turn it back on from the fixed controls. Atlas is currently a guided assistant with predefined actions—not a connected, open-ended AI chat model. More natural neural speech and conversational AI require a separate server-side integration with protected credentials.
+
+### 7. RO’Lyfe project navigation
+
+The project dropdown links to RO’Lyfe destinations and source repositories. A source-code link does not guarantee that a project's live deployment is enabled or that the destination is currently healthy. These links should be checked as part of release testing.
+
+## Project structure
+
+This repository is intentionally lightweight and static:
+
+- `index.html` — page structure, sections, navigation and controls.
+- `listening.css` — responsive visual system and mobile layout.
+- `listening.js` — discovery, artist profiles, podcast search, saved list and Atlas behavior.
+- `README.md` — project setup, architecture, mechanics and known limitations.
+
+The radio player is shared from the RO’Lyfe Gaming repository rather than duplicated here. The Last.fm and MusicBrainz integrations run through Supabase Edge Functions.
+
+## Security and content rights
+
+- Keep Last.fm and all other private API secrets in Supabase Edge Function secrets.
+- Do not commit service-role keys, private API keys, access tokens or credentials to GitHub.
+- A browser-visible Supabase publishable/anon key is not a service-role secret; protect backend data with appropriate access policies and function-side validation.
+- Do not copy, host or rebroadcast music or podcast audio without the necessary rights.
+- Radio stations and podcast publishers retain control of their own content, streams, availability and advertising.
+
+## Publish with GitHub Pages
+
+1. Open this repository's **Settings → Pages**.
+2. Under **Build and deployment**, choose **Deploy from a branch**.
+3. Select branch `main` and folder `/(root)`.
+4. Save and wait for GitHub Pages to finish publishing.
+
+Expected URL:
+
 https://rolrichman.github.io/rolyfe-just-listening/
 
-## Current limitations
-- Saved items remain in this browser on this device; there is no account sync yet.
-- Podcast search shows listings and official show links; full episode playback integration can be added through publisher RSS feeds or an authorized podcast provider.
-- Browser autoplay restrictions may require visitors to tap Play before radio audio begins.
-- Atlas spoken voice is limited to the voices supplied by the browser/device until a neural TTS service is connected.
-- The MusicBrainz function is deployed, but its live response and artist counts still need browser-side testing after GitHub Pages is enabled.
+## Completion checklist
+
+Before calling the release complete, verify:
+
+- [ ] GitHub Pages is enabled and the public URL loads on mobile and desktop.
+- [ ] The shared radio-player script loads from the RO’Lyfe Gaming Pages destination.
+- [ ] Caribbean island filters return relevant stations; genre filters return sensible results.
+- [ ] Radio playback, next, pause, mute, volume and station resume work on Android and desktop.
+- [ ] Last.fm trending and artist search/profile calls return live data through Supabase.
+- [ ] MusicBrainz album/EP counts return correctly and handle missing matches gracefully.
+- [ ] Podcast search returns shows and the official show links open.
+- [ ] Save, follow, remove and refresh persistence work for tracks, albums and podcasts.
+- [ ] Atlas ON/OFF, spoken guidance, optional microphone input and Back to Top behave correctly.
+- [ ] Project menu destinations are current and mobile navigation does not overflow.
+- [ ] No private credentials appear in public source files or browser network requests.
+
+## Known limitations and next enhancements
+
+- No account-based cloud sync for listening lists yet.
+- Podcast search currently links to shows; full episode playback is not implemented.
+- Last.fm provides discovery metadata, not full music playback.
+- Atlas does not yet use a general-purpose AI model or neural voice provider.
+- Third-party station streams can be offline, geo-restricted, insecure or unsupported.
+- The radio player depends on a separately hosted shared script; both deployments must remain available.
+
+Recommended next improvements are a true unified mini-player state, podcast episode playback through authorized feeds, optional account-backed listening-list sync, richer R&B/Caribbean artist discovery, and a server-side conversational Atlas integration.
