@@ -137,11 +137,19 @@ function addSaved(item){
   state.saved=state.saved.slice(0,150);
   persistSaved();renderSaved();renderTracks();renderArtistProfileButtons();
 }
+function safeHref(value){
+  try{
+    const url=new URL(String(value||""),window.location.origin);
+    return url.protocol==="https:"||url.protocol==="http:"?url.href:"";
+  }catch(_){return "";}
+}
 function renderSaved(){
   $("savedCount").textContent=state.saved.length+" saved";
-  $("savedList").innerHTML=state.saved.length?state.saved.map(item=>
-    '<div class="saved-row"><span class="track-icon">'+(item.type==="podcast"?"🎙":item.type==="album"?"💿":"♫")+'</span><div><strong>'+safe(item.title)+'</strong><small>'+safe(item.subtitle||item.type)+'</small></div><button type="button" data-remove="'+safe(item.key)+'">Remove</button></div>'
-  ).join(""):'<p class="fine">Your list is waiting for its first favorite. Tap Save or Follow on an item.</p>';
+  $("savedList").innerHTML=state.saved.length?state.saved.map(item=>{
+    const href=safeHref(item.url);
+    const open=href?'<a class="mini" target="_blank" rel="noopener noreferrer" href="'+safe(href)+'">Open ↗</a>':"";
+    return '<div class="saved-row"><span class="track-icon">'+(item.type==="podcast"?"🎙":item.type==="album"?"💿":"♫")+'</span><div class="saved-copy"><strong>'+safe(item.title)+'</strong><small>'+safe(item.subtitle||item.type)+'</small></div><div class="saved-actions">'+open+'<button type="button" data-remove="'+safe(item.key)+'">Remove</button></div></div>';
+  }).join(""):'<p class="fine">Your list is waiting for its first favorite. Tap Save or Follow on an item.</p>';
 }
 function trackKey(track){return "track:"+String(track.name||"").toLowerCase()+"|"+String(track.artist||"").toLowerCase();}
 function renderTracks(){
@@ -396,14 +404,17 @@ function tuneRadioLabels(){
   const subtitle=document.querySelector(".rol-radio-sub");if(subtitle)subtitle.textContent="Island stations, R&B, Hip-Hop and more · Listen while you play";
 }
 function welcomeSequence(){
-  window.setTimeout(()=>$("welcomeToast").hidden=false,2400);
   window.setTimeout(()=>{
-    if(!state.aiEnabled)return;
-    openAtlas(true);
-    const intro="Hello there. Welcome to RO’Lyfe Just Listening. I'm Atlas, your listening guide. We can find the next station, explore popular and trending sounds, search your favorite artists, or settle into a podcast. What are you in the mood for?";
-    setAtlasMessage(intro);
-    say(intro);
-  },5200);
+    if($("welcomeToast"))$("welcomeToast").hidden=false;
+  },900);
+  window.setTimeout(()=>{
+    if($("welcomeToast"))$("welcomeToast").hidden=true;
+  },6500);
+  if(state.aiEnabled){
+    setAtlasMessage("Welcome to RO’Lyfe JUST LISTENING. I'm Atlas, your listening guide. Tap the Atlas button whenever you'd like help finding a station, artist, track or podcast.");
+  }else{
+    setAtlasMessage("Atlas is off. Turn it on whenever you'd like a listening guide.");
+  }
   window.setTimeout(tuneRadioLabels,1000);
 }
 function init(){
