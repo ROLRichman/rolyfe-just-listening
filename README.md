@@ -14,7 +14,7 @@ A listener-first, mobile-friendly audio lounge for global radio, Hip-Hop and R&B
 - Discover popular tracks and artists.
 - Explore artist biographies, listener statistics, popular albums, top tracks, related artists and catalog counts.
 - Search podcasts by host, topic or category and save shows to a personal list.
-- Save tracks, albums and podcasts without creating an account.
+- Save tracks, albums and podcasts without creating an account, then open saved items directly from the listening shelf.
 - Use Atlas as an optional listening guide, with browser speech and optional microphone input.
 - Open RO’Lyfe Gaming, Live Sports and other RO’Lyfe destinations from the project menu.
 - Keep radio controls visible when supported games enter fullscreen.
@@ -57,7 +57,7 @@ Saved tracks, albums and podcasts are stored in the visitor’s browser using `l
 
 Atlas currently runs in the browser. It uses speech synthesis for spoken guidance and browser speech recognition when supported and explicitly enabled by the visitor. Microphone access is requested only after the visitor chooses Talk to Atlas.
 
-The ON/OFF preference is stored locally. Turning Atlas off disables its panel and speech; the visitor can turn it back on from the fixed controls. Atlas is currently a guided assistant with predefined actions—not a connected, open-ended AI chat model. More natural neural speech and conversational AI require a separate server-side integration with protected credentials.
+The ON/OFF preference is stored locally. The Atlas dock stays fixed on screen while the visitor scrolls; the panel opens only when the visitor taps it. The welcome toast dismisses itself, so the page does not unexpectedly open a panel or speak on arrival. Turning Atlas off cancels speech and microphone recognition. Atlas is currently a guided assistant with predefined actions—not a connected, open-ended AI chat model. More natural neural speech and conversational AI require a separate server-side integration with protected credentials.
 
 ### 7. RO’Lyfe project navigation
 
@@ -111,7 +111,7 @@ Before calling the release complete, verify:
 
 ## Known limitations and next enhancements
 
-- No account-based cloud sync for listening lists yet.
+- No account-based cloud sync for listening lists yet; saved entries are stored in this browser, with safe Open links where a destination is available.
 - Podcast search currently links to shows; full episode playback is not implemented.
 - Last.fm provides discovery metadata, not full music playback.
 - Atlas does not yet use a general-purpose AI model or neural voice provider.
