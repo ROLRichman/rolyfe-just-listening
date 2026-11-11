@@ -452,8 +452,8 @@ function bind(){
   document.addEventListener("keydown",event=>{if(event.key==="Escape"){closeProjectMenu();closeAtlas();$("moodMenu").open=false;}});
 }
 function tuneRadioLabels(){
-  const title=document.querySelector(".rol-radio-title");if(title)title.textContent="🎧 RO’Lyfe Live Radio";
-  const subtitle=document.querySelector(".rol-radio-sub");if(subtitle)subtitle.textContent="Island stations, R&B, Hip-Hop and more · Listen while you play";
+  const title=document.querySelector(".rol-radio-title");if(title)title.textContent="🎧 RO’Lyfe Music Stations";
+  const subtitle=document.querySelector(".rol-radio-sub");if(subtitle)subtitle.textContent="Island stations, Hip-Hop, R&B and more · Save favorites & listen while you play";
 }
 function welcomeSequence(){
   window.setTimeout(()=>{
