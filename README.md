@@ -195,3 +195,6 @@ Save it in Supabase only. Do not paste it into the browser, GitHub, this README,
 - Guests can save a station as **Default**. The default station ID is stored in this browser/device, and the player uses it on first play when no prior last-station resume is available. No account is required.
 - Added **30-second rewind**, **30-second forward**, and **Go Live** controls. They activate only if the broadcaster's stream exposes a seekable catch-up/DVR window. Ordinary live-only streams keep them disabled and explain why; the player does not record or silently buffer third-party broadcasts.
 - Station favorites and the default station remain device-local. Third-party stations may include their own ads and can change or go offline.
+
+
+The **Country Music** choice is also available in the Your Sound selector and Popular & Trending chart filters, so the genre remains separate from the Explore by Country station-location menu.
