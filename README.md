@@ -29,7 +29,7 @@ The page loads the shared radio player from the RO’Lyfe Gaming repository:
 
 That shared script mounts a floating radio player on the page. It requests station listings through the `rolyfe-radio-browser` Supabase Edge Function, which acts as the server-side directory connection. The browser receives station metadata and HTTPS stream addresses, then plays the selected broadcaster through an HTML audio element.
 
-The player supports genre and island/region filters, station selection, next station, play/pause, mute and volume. It remembers the visitor’s radio preferences and last station in browser storage. It attempts a direct secure stream first, then tries a resolved station URL when needed.
+The player supports genre and island/region filters, station selection, next station, play/pause, mute and volume. It remembers radio preferences and the last station in browser storage, and now includes a separate Saved Stations shelf. Visitors can favorite up to 50 station entries, play a favorite after changing genre or island filters, and remove favorites without having to search for them again. Favorites are stored locally in the same browser/device. It attempts a direct secure stream first, then tries a resolved station URL when needed.
 
 Radio stations are independent broadcasters. Availability, stream format, reliability and programming are controlled by each station. Some streams may not work on every browser or device. Mobile browsers may require a user tap before audio can begin.
 
@@ -100,7 +100,8 @@ Before calling the release complete, verify:
 - [ ] GitHub Pages is enabled and the public URL loads on mobile and desktop.
 - [ ] The shared radio-player script loads from the RO’Lyfe Gaming Pages destination.
 - [ ] Caribbean island filters return relevant stations; genre filters return sensible results.
-- [ ] Radio playback, next, pause, mute, volume and station resume work on Android and desktop.
+- [ ] Radio playback, next, pause, mute, volume and last-station resume work on Android and desktop.
+- [ ] Saved Stations can be added, played, removed, and still appear after changing genre/island filters or reloading the page.
 - [ ] Last.fm trending and artist search/profile calls return live data through Supabase.
 - [ ] MusicBrainz album/EP counts return correctly and handle missing matches gracefully.
 - [ ] Podcast search returns shows and the official show links open.
@@ -111,7 +112,7 @@ Before calling the release complete, verify:
 
 ## Known limitations and next enhancements
 
-- No account-based cloud sync for listening lists yet; saved entries are stored in this browser, with safe Open links where a destination is available.
+- No account-based cloud sync for My Listening List or radio favorites yet; saved entries are stored in this browser/device. My Listening List covers discovery tracks, albums and podcasts; the radio player has its own Saved Stations shelf.
 - Podcast search currently links to shows; full episode playback is not implemented.
 - Last.fm provides discovery metadata, not full music playback.
 - Atlas does not yet use a general-purpose AI model or neural voice provider.
@@ -126,3 +127,13 @@ Recommended next improvements are a true unified mini-player state, podcast epis
 The Hip-Hop Vault groups artist shortcuts into curated collections, with a maximum of 15 quick-pick artists displayed at a time. Visitors can still search any artist directly. The collections include foundational pioneers, East Coast lyricists, groups, West Coast icons, current artists and a dedicated Women Who Move Hip-Hop collection. The requested sequence places Biggie and 2Pac among the first icons, then KRS-One, Slick Rick and Kool G Rap before Locksmith appears in the lyricist collection.
 
 Atlas now exposes the speech voices installed by the visitor's browser/device through a language dropdown, plus a persistent speaking-volume slider. The selected language is also used for browser speech recognition where supported. This changes the voice language and microphone recognition locale; it does not yet provide automatic translation or open-ended multilingual AI responses. Voice availability and quality depend on the operating system/browser and installed speech packs. Full multilingual conversation requires a protected server-side AI integration.
+
+
+## November 11 listening-lounge updates
+
+- The shared floating radio player now has a separate **Saved Stations** shelf. A heart beside each available station saves or removes it; favorites remain available after changing genres or island filters and after refreshing the page. Up to 50 stations are stored locally per browser/device.
+- Saved station playback uses the saved station's secure stream URL when available and can fall back to the station directory's resolver. Third-party streams can still change, become unavailable, or require another tap on mobile.
+- Podcast quick searches now include **Leadership**, **Money & Saving**, and **Stop Wasting Money**. Show cards prefer their Apple Podcasts directory page, with publisher and feed links as fallbacks.
+- Added **AZ** and **DJ Premier** to the pioneers/architects collection; AZ is also listed among East Coast artists.
+- Atlas is aligned with its lower-left dock on mobile. Its panel has a maximum height and its own scroll area so the speech controls remain reachable on shorter screens.
+- Radio favorites are separate from **My Listening List**: one is for live station presets; the other is for music discovery and podcast bookmarks.
