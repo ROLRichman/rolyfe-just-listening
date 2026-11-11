@@ -29,7 +29,7 @@ The page loads the shared radio player from the RO’Lyfe Gaming repository:
 
 That shared script mounts a floating radio player on the page. It requests station listings through the `rolyfe-radio-browser` Supabase Edge Function, which acts as the server-side directory connection. The browser receives station metadata and HTTPS stream addresses, then plays the selected broadcaster through an HTML audio element.
 
-The player supports genre and island/region filters, station selection, next station, play/pause, mute and volume. It remembers radio preferences and the last station in browser storage, and now includes a separate Saved Stations shelf. Visitors can favorite up to 50 station entries, play a favorite after changing genre or island filters, and remove favorites without having to search for them again. Favorites are stored locally in the same browser/device. It attempts a direct secure stream first, then tries a resolved station URL when needed.
+The player supports genre and island/region filters, station selection, next station, play/pause, mute and volume. It remembers radio preferences and the last station in browser storage, and now includes a separate Saved Stations shelf plus a **Save current station** action directly below the Play/Next/Mute controls. Visitors can favorite up to 50 station entries, play a favorite after changing genre or island filters, and remove favorites without having to search for them again. Favorites are stored locally in the same browser/device. It attempts a direct secure stream first, then tries a resolved station URL when needed.
 
 Radio stations are independent broadcasters. Availability, stream format, reliability and programming are controlled by each station. Some streams may not work on every browser or device. Mobile browsers may require a user tap before audio can begin.
 
@@ -137,3 +137,14 @@ Atlas now exposes the speech voices installed by the visitor's browser/device th
 - Added **AZ** and **DJ Premier** to the pioneers/architects collection; AZ is also listed among East Coast artists.
 - Atlas is aligned with its lower-left dock on mobile. Its panel has a maximum height and its own scroll area so the speech controls remain reachable on shorter screens.
 - Radio favorites are separate from **My Listening List**: one is for live station presets; the other is for music discovery and podcast bookmarks.
+
+
+## Lyrics, lyricists and the expanded sound selector
+
+- The artist directory now includes separate Hip-Hop/Rap lyricists, R&B/Soul songwriters, Reggae/Dancehall storytellers, women lyricists/MCs, and producers/architects, alongside the original era and regional collections. Artist chips remain paged at 15 per screen.
+- Trending-track and artist-profile track cards now offer a **Lyrics** link that searches Genius for the exact title and artist. The project links to a licensed lyric destination rather than copying or hosting full copyrighted lyrics.
+- The **Your Sound, Your Call** selector is now an expandable in-page panel with Hip-Hop, Old School Hip-Hop, R&B/Soul, Neo-Soul, Reggae, Dancehall, Caribbean, Kompa/Zouk, Afrobeats, Smooth Jazz, Podcasts, and Surprise Me.
+- Track cards with a title and artist can be saved to My Listening List. Live radio is different: most station streams do not expose a dependable now-playing song title to the browser, so users can save the station preset. A current radio song can be saved only when a station/provider supplies usable track metadata; that metadata integration is not yet available across all stations.
+
+
+The current station can be saved directly below **Next** as well as from its heart icon in the available-station list. The floating radio launcher now sits at the lower-right on mobile; Atlas stays at the lower-left, and Back to Top is stacked above Radio instead of overlapping the left-side content.
