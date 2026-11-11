@@ -377,7 +377,7 @@ async function searchArtists(query){
       }).join("");
       return;
     }
-    if(!lastMatches.length){$("artistMatches").hidden=true;$("artistResults").innerHTML='<div class="empty">No artist match found. Try another spelling or search a related group.</div>';return;}
+    if(!lastMatches.length){$("artistResults").innerHTML='<div class="empty">No artist match found. Try another spelling or search a related group.</div>';return;}
     state.artistMatches=lastMatches.slice(0,8).map(item=>({name:item.name||term,mbid:item.mbid||"",listeners:item.listeners||null,disambiguation:"",type:"",area:"",period:""}));
     if(readButton)readButton.hidden=false;
     $("artistResults").innerHTML=lastMatches.slice(0,8).map(item=>{
