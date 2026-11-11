@@ -10,13 +10,16 @@ const state={
   aiEnabled:readAIEnabled(),recognition:null,lastSpeech:"",
   preferredVoice:null,currentArtist:null
 };
-const STARTER_ARTISTS=[
-  "Nas","KRS-One","Kendrick Lamar","JID","J. Cole","Jeru the Damaja",
-  "Brand Nubian","Gang Starr","Pete Rock","Redman","Keith Murray",
-  "Erick Sermon","O.C.","Slick Rick","D-Nice","Rakim","Kool G Rap",
-  "Scarface","Special Ed","Cocoa Brovaz","OGC","Buckshot","Boot Camp Clik",
-  "Black Thought","Sa-Roc","Mos Def","Yasiin Bey"
-];
+const ARTIST_COLLECTIONS={
+  headliners:["The Notorious B.I.G.","2Pac","Nas","Jay-Z","Big Pun","Fat Joe","Dr. Dre","Eminem","Snoop Dogg","Ice Cube","Lil Wayne","Andre 3000","LL Cool J","Beanie Sigel","Jadakiss"],
+  pioneers:["Grandmaster Flash","KRS-One","Slick Rick","Kool G Rap","Rakim","Doug E. Fresh","Biz Markie","Roxanne Shanté","MC Lyte","Marley Marl","D-Nice","Special Ed","Queen Latifah","Big Daddy Kane","Eric B. & Rakim"],
+  east:["Jadakiss","The LOX","Styles P","Mobb Deep","Capone-N-Noreaga","Joey Bada$","Nas","Mic Geronimo","Group Home","Lost Boyz","Keith Murray","Redman","Papoose","RJ Payne","Locksmith"],
+  groups:["The Roots","The Pharcyde","Das EFX","Group Home","Lost Boyz","Gang Starr","Brand Nubian","Boot Camp Clik","A Tribe Called Quest","De La Soul","Black Star","The Fugees","OutKast","Cocoa Brovaz","EPMD"],
+  west:["Dr. Dre","Eminem","Snoop Dogg","Ice Cube","Kendrick Lamar","D Smoke","Dizzy Wright","Too Short","E-40","The Lady of Rage","Ras Kass","Xzibit","Warren G","Kurupt","The Game"],
+  modern:["Locksmith","RJ Payne","D Smoke","Dizzy Wright","Papoose","Dave East","Russ","Joey Bada$","JID","Kendrick Lamar","J. Cole","Black Thought","Sa-Roc","Little Simz","Rapsody"],
+  women:["Eve","Sa-Roc","MC Lyte","Roxanne Shanté","Queen Latifah","Lauryn Hill","Rah Digga","Jean Grae","Rapsody","Lady of Rage","Remy Ma","Foxy Brown","Bahamadia","Monie Love","Ladybug Mecca","Noname","Che Noir","Snow Tha Product","Little Simz","Tierra Whack","Doechii","Megan Thee Stallion","Missy Elliott","Nicki Minaj","Erykah Badu"]
+};
+const STARTER_ARTISTS=Object.values(ARTIST_COLLECTIONS).flat();
 function readSaved(){try{const x=JSON.parse(localStorage.getItem(SAVED_KEY)||"[]");return Array.isArray(x)?x:[]}catch(_){return[]}}
 function readAIEnabled(){try{return localStorage.getItem(AI_KEY)!=="false"}catch(_){return true}}
 function safe(value){return String(value??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));}
@@ -35,14 +38,24 @@ function openLinkSearch(type,name,artist){
 function readVoices(){
   if(!("speechSynthesis" in window))return;
   const voices=window.speechSynthesis.getVoices()||[];
-  const english=voices.filter(v=>/^en(-|_)/i.test(v.lang));
-  state.preferredVoice=
-    english.find(v=>/google us english/i.test(v.name))||
-    english.find(v=>/microsoft.*(aria|jenny|guy|ryan)/i.test(v.name))||
-    english.find(v=>/samantha|ava|daniel/i.test(v.name))||
-    english.find(v=>/natural|enhanced|premium/i.test(v.name))||
-    english.find(v=>v.lang.toLowerCase()==="en-us")||
-    english[0]||null;
+  const select=$("atlasLanguage");
+  if(select){
+    const current=state.voiceLanguage||"en-US";
+    const langs=[...new Set(voices.map(v=>v.lang).filter(Boolean))].sort((a,b)=>a.localeCompare(b));
+    if(langs.length){
+      const labels=langs.map(lang=>{
+        const voice=voices.find(v=>v.lang===lang);
+        const languageName=(typeof Intl!=="undefined"&&Intl.DisplayNames)?new Intl.DisplayNames(["en"],{type:"language"}).of(lang.split("-")[0]):lang;
+        return {lang,label:(languageName||lang)+" · "+lang,voice:voice?.name||""};
+      });
+      select.innerHTML=labels.map(item=>'<option value="'+safe(item.lang)+'">'+safe(item.label)+'</option>').join("");
+      if(langs.includes(current))select.value=current;
+      else if(langs.includes("en-US"))select.value="en-US";
+      state.voiceLanguage=select.value;
+    }
+  }
+  const chosen=voices.filter(v=>v.lang===state.voiceLanguage);
+  state.preferredVoice=chosen.find(v=>/natural|enhanced|premium|google/i.test(v.name))||chosen[0]||voices[0]||null;
 }
 if("speechSynthesis" in window){
   readVoices();
@@ -61,7 +74,7 @@ function say(text){
     if(state.preferredVoice)utterance.voice=state.preferredVoice;
     utterance.rate=0.91;
     utterance.pitch=0.96;
-    utterance.volume=1;
+    utterance.volume=Math.max(0,Math.min(1,state.voiceVolume/100));
     utterance.onstart=()=>setVoiceStatus("Atlas is speaking…");
     utterance.onend=()=>setVoiceStatus("Ready when you are");
     utterance.onerror=()=>setVoiceStatus("Tap Speak to hear Atlas");
@@ -196,7 +209,11 @@ async function searchPodcasts(term){
 
 /* Artist discovery uses the existing Last.fm Edge Function. */
 function initArtistPicks(){
-  $("artistQuickPicks").innerHTML=STARTER_ARTISTS.map(name=>'<button class="artist-chip" type="button" data-artist-quick="'+safe(name)+'">'+safe(name)+'</button>').join("");
+  const category=$("artistCategory")?.value||"headliners";
+  const names=(ARTIST_COLLECTIONS[category]||ARTIST_COLLECTIONS.headliners).slice(0,15);
+  $("artistQuickPicks").innerHTML=names.map(name=>'<button class="artist-chip" type="button" data-artist-quick="'+safe(name)+'">'+safe(name)+'</button>').join("");
+  const count=$("artistPickCount");
+  if(count)count.textContent=names.length+" artists shown · search any name above";
 }
 async function searchArtists(query){
   const term=String(query||"").trim();
@@ -307,7 +324,7 @@ function beginVoiceInput(){
   try{
     if(state.recognition){try{state.recognition.stop();}catch(_){}state.recognition=null;}
     const recognition=new Recognition();state.recognition=recognition;
-    recognition.lang="en-US";recognition.interimResults=false;recognition.maxAlternatives=1;
+    recognition.lang=state.voiceLanguage||"en-US";recognition.interimResults=false;recognition.maxAlternatives=1;
     setVoiceStatus("Listening…");
     recognition.onresult=event=>{
       const words=String(event.results?.[0]?.[0]?.transcript||"").toLowerCase();
@@ -336,6 +353,17 @@ function bind(){
   $("atlasPower").addEventListener("click",()=>setAIEnabled(!state.aiEnabled));
   $("atlasSpeak").addEventListener("click",()=>say(state.lastSpeech||"Hello there. Welcome to RO’Lyfe Just Listening. I'm Atlas, your listening guide. What would you like to discover today?"));
   $("atlasTalk").addEventListener("click",beginVoiceInput);
+  $("atlasLanguage").addEventListener("change",()=>{
+    state.voiceLanguage=$("atlasLanguage").value;
+    readVoices();
+    setVoiceStatus("Voice set to "+$("atlasLanguage").selectedOptions[0]?.textContent+".");
+  });
+  $("atlasVolume").addEventListener("input",()=>{
+    state.voiceVolume=Number($("atlasVolume").value);
+    $("atlasVolumeValue").textContent=state.voiceVolume+"%";
+    try{localStorage.setItem("rolyfeJustListening.atlasVolume.v1",String(state.voiceVolume));}catch(_){}
+  });
+  $("artistCategory").addEventListener("change",initArtistPicks);
   $("startRadio").addEventListener("click",()=>{launchRadio();setAtlasMessage("Live radio is ready. Choose a station and press Play when you're ready.",true);});
   $("refreshTrending").addEventListener("click",()=>loadTrending(state.trend));
   document.querySelectorAll("[data-trend]").forEach(button=>button.addEventListener("click",()=>loadTrending(button.dataset.trend)));
@@ -418,7 +446,13 @@ function welcomeSequence(){
   window.setTimeout(tuneRadioLabels,1000);
 }
 function init(){
+  try{
+    const stored=Number(localStorage.getItem("rolyfeJustListening.atlasVolume.v1"));
+    if(Number.isFinite(stored)&&stored>=0&&stored<=100)state.voiceVolume=stored;
+  }catch(_){}
   bind();renderSaved();renderArtistPicks();
+  $("atlasVolume").value=String(state.voiceVolume);
+  $("atlasVolumeValue").textContent=state.voiceVolume+"%";
   setAIEnabled(state.aiEnabled);
   loadTrending("all");
   welcomeSequence();
