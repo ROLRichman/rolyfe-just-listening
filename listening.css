@@ -93,3 +93,19 @@
 .artist-match-note strong{display:block;color:#a5e8b3;font-size:12px;margin-bottom:2px}
 .artist-result small+small{margin-top:3px;color:#8fb09a}
 @media(max-width:620px){.preview-ready{grid-template-columns:1fr}.preview-ready audio{height:40px}.apple-store-link{justify-self:start}}
+
+
+/* Signature listening controls: transport first, discovery second. */
+.quick{align-items:center;gap:10px}
+.quick>div:first-child{min-width:180px}
+.quick-transport,.quick-discovery{display:flex;align-items:center;gap:7px;flex-wrap:wrap}
+.quick .quick-transport button{border-color:#52745d;background:linear-gradient(145deg,#16291e,#101b15);min-width:103px}
+.quick .quick-transport button[aria-pressed="true"]{border-color:#7fe0a0;color:#a9f4bb;background:#183b28}
+.quick .quick-discovery button{background:#0f1b14}
+@media(max-width:620px){
+  .quick{display:grid;grid-template-columns:1fr}
+  .quick>div:first-child{width:100%;min-width:0}
+  .quick-transport{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));width:100%}
+  .quick-discovery{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));width:100%}
+  .quick .quick-transport button,.quick .quick-discovery button{min-width:0;width:100%;padding:10px 5px;font-size:10px;white-space:nowrap}
+}
