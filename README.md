@@ -186,3 +186,12 @@ Save it in Supabase only. Do not paste it into the browser, GitHub, this README,
 - The floating RO’Lyfe Music Stations player also includes Previous beside Play, Next and Mute.
 - Previous wraps from the first listed station to the last station. The current station index is restored when resuming the remembered station where it is still present in the loaded station list.
 - The floating Music Stations panel has more vertical room (up to 82vh/680px on larger displays and 78dvh on mobile) while retaining internal scrolling and safe viewport limits.
+
+
+## Worldwide radio, station defaults and live catch-up
+
+- The shared radio player requests the Radio Browser country-code catalogue through the Supabase proxy. The country picker retains Caribbean shortcuts and adds an alphabetized worldwide country list; station results are filtered by selected country.
+- Added **Country Music** as a station genre, separate from the **Explore by Country** location filter.
+- Guests can save a station as **Default**. The default station ID is stored in this browser/device, and the player uses it on first play when no prior last-station resume is available. No account is required.
+- Added **30-second rewind**, **30-second forward**, and **Go Live** controls. They activate only if the broadcaster's stream exposes a seekable catch-up/DVR window. Ordinary live-only streams keep them disabled and explain why; the player does not record or silently buffer third-party broadcasts.
+- Station favorites and the default station remain device-local. Third-party stations may include their own ads and can change or go offline.
