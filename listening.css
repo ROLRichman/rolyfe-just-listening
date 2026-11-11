@@ -35,3 +35,24 @@
 /* Keep Atlas fully visible and scrollable, including short mobile viewports. */
 .atlas{left:15px;right:auto;bottom:calc(76px + env(safe-area-inset-bottom,0px));width:min(360px,calc(100vw - 30px));max-height:min(72vh,600px);max-height:min(72dvh,600px);overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;scrollbar-width:thin}
 @media(max-width:620px){.atlas{left:10px;right:auto;bottom:calc(66px + env(safe-area-inset-bottom,0px));width:calc(100vw - 20px);max-height:min(70vh,560px);max-height:min(70dvh,560px)}}
+
+
+/* Your Sound, Your Call: visible, expandable mood picker. */
+.mood-menu{margin:14px 0 5px;border:1px solid #405849;border-radius:17px;background:linear-gradient(140deg,#14251b,#101a15);overflow:hidden}
+.mood-menu>summary{display:flex;align-items:center;justify-content:space-between;gap:12px;list-style:none;cursor:pointer;padding:15px 17px}
+.mood-menu>summary::-webkit-details-marker{display:none}
+.mood-menu>summary small,.mood-menu>summary strong{display:block}
+.mood-menu>summary small{color:var(--green);font-size:9px;font-weight:900;letter-spacing:1.6px}
+.mood-menu>summary strong{font-size:15px;margin-top:3px}
+.mood-caret{color:var(--green);font-size:23px;transition:transform .2s}
+.mood-menu[open] .mood-caret{transform:rotate(180deg)}
+.mood-options{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;padding:0 14px 14px}
+.mood-options button{min-width:0;border:1px solid #405849;border-radius:11px;padding:10px 8px;background:#0f1b14;color:#e3f0e5;font-size:11px;font-weight:850}
+.mood-options button:hover{border-color:var(--green);color:var(--green);background:#173322}
+@media(max-width:620px){.mood-options{grid-template-columns:repeat(2,minmax(0,1fr));gap:7px}.mood-menu>summary{padding:13px}.mood-options button{padding:11px 8px}}
+/* Keep the three floating controls in separate mobile positions. */
+@media(max-width:620px){
+  .atlas-dock{left:10px;right:auto;bottom:calc(12px + env(safe-area-inset-bottom,0px));max-width:calc(50vw - 18px);white-space:nowrap}
+  .back-top{left:auto;right:10px;bottom:calc(70px + env(safe-area-inset-bottom,0px));z-index:100020}
+  .atlas{left:10px;right:auto;bottom:calc(64px + env(safe-area-inset-bottom,0px));width:calc(100vw - 20px);max-height:min(70vh,560px);max-height:min(70dvh,560px)}
+}
