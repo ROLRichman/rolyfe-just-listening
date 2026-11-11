@@ -109,3 +109,17 @@
   .quick-discovery{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));width:100%}
   .quick .quick-transport button,.quick .quick-discovery button{min-width:0;width:100%;padding:10px 5px;font-size:10px;white-space:nowrap}
 }
+
+
+/* Atlas minimizes without discarding the conversation; the dock becomes the return control. */
+.atlas-head button{display:grid;place-items:center;flex:none;min-width:32px;min-height:32px;border:1px solid #45644c;border-radius:9px;background:#102017;color:#d4e6d8;line-height:1}
+.atlas-head button:hover{border-color:var(--green);color:var(--green)}
+.atlas-dock{transition:background .18s,border-color .18s,color .18s}
+.atlas-dock[aria-expanded="true"]{border-color:#8ccea0}
+
+/* Keep artist identities readable on narrow screens and prevent flex text from escaping its card. */
+.artist-match-note{grid-column:1/-1}
+.artist-result>span{flex:1;min-width:0;overflow:hidden}
+.artist-result strong,.artist-result small{white-space:normal;overflow-wrap:anywhere;text-overflow:clip}
+.artist-result small{line-height:1.4}
+@media(max-width:850px){.artist-results{grid-template-columns:minmax(0,1fr)}}
