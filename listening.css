@@ -25,3 +25,8 @@
 .voice-buttons{display:flex;gap:7px;grid-column:1/-1}
 .voice-controls small{grid-column:1/-1;margin-left:0}
 @media(max-width:620px){.artist-picker{align-items:stretch}.artist-picker label{width:100%}.artist-picker select{max-width:none;width:100%}.voice-controls{grid-template-columns:1fr}.voice-controls .volume-label,.voice-controls select,.voice-controls input[type=range],.voice-buttons,.voice-controls small{grid-column:1}}
+
+.artist-page-controls{display:flex;gap:6px;flex-wrap:wrap}
+.artist-page-controls button{border:1px solid #405849;border-radius:8px;padding:7px 9px;background:#17251b;color:#cfe6d4;font-size:10px;font-weight:800}
+.artist-page-controls button:disabled{opacity:.4;cursor:not-allowed}
+.artist-page-controls button[hidden]{display:none}
