@@ -12,7 +12,7 @@ const state={
 };
 const ARTIST_COLLECTIONS={
   headliners:["The Notorious B.I.G.","2Pac","Nas","Jay-Z","Big Pun","Fat Joe","Dr. Dre","Eminem","Snoop Dogg","Ice Cube","Lil Wayne","Andre 3000","LL Cool J","Beanie Sigel","Jadakiss"],
-  pioneers:["Grandmaster Flash","KRS-One","Slick Rick","Kool G Rap","Rakim","Doug E. Fresh","Biz Markie","Roxanne Shanté","MC Lyte","Marley Marl","D-Nice","Special Ed","Queen Latifah","Big Daddy Kane","Eric B. & Rakim"],
+  pioneers:["Grandmaster Flash","KRS-One","Slick Rick","Kool G Rap","Rakim","Doug E. Fresh","Biz Markie","Roxanne Shanté","MC Lyte","Marley B","Marley Marl","D-Nice","Special Ed","Queen Latifah","Big Daddy Kane","Eric B. & Rakim"],
   east:["Jadakiss","The LOX","Styles P","Mobb Deep","Capone-N-Noreaga","Joey Bada$","Nas","Mic Geronimo","Group Home","Lost Boyz","Keith Murray","Redman","Papoose","RJ Payne","Locksmith"],
   groups:["The Roots","The Pharcyde","Das EFX","Group Home","Lost Boyz","Gang Starr","Brand Nubian","Boot Camp Clik","A Tribe Called Quest","De La Soul","Black Star","The Fugees","OutKast","Cocoa Brovaz","EPMD"],
   west:["Dr. Dre","Eminem","Snoop Dogg","Ice Cube","Kendrick Lamar","D Smoke","Dizzy Wright","Too Short","E-40","The Lady of Rage","Ras Kass","Xzibit","Warren G","Kurupt","The Game"],
