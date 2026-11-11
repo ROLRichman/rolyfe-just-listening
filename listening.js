@@ -12,8 +12,8 @@ const state={
 };
 const ARTIST_COLLECTIONS={
   headliners:["The Notorious B.I.G.","2Pac","Nas","Jay-Z","Big Pun","Fat Joe","Dr. Dre","Eminem","Snoop Dogg","Ice Cube","Lil Wayne","Andre 3000","LL Cool J","Beanie Sigel","Jadakiss"],
-  pioneers:["Grandmaster Flash","KRS-One","Slick Rick","Kool G Rap","Rakim","Doug E. Fresh","Biz Markie","Roxanne Shanté","MC Lyte","Marley B","Marley Marl","D-Nice","Special Ed","Queen Latifah","Big Daddy Kane","Eric B. & Rakim"],
-  east:["Jadakiss","The LOX","Styles P","Mobb Deep","Capone-N-Noreaga","Joey Bada$","Nas","Mic Geronimo","Group Home","Lost Boyz","Keith Murray","Redman","Papoose","RJ Payne","Locksmith"],
+  pioneers:["Grandmaster Flash","KRS-One","Slick Rick","Kool G Rap","Rakim","AZ","DJ Premier","Doug E. Fresh","Biz Markie","Roxanne Shanté","MC Lyte","Marley B","Marley Marl","D-Nice","Special Ed","Queen Latifah","Big Daddy Kane","Eric B. & Rakim"],
+  east:["Jadakiss","The LOX","Styles P","Mobb Deep","Capone-N-Noreaga","Joey Bada$","Nas","AZ","Mic Geronimo","Group Home","Lost Boyz","Keith Murray","Redman","Papoose","RJ Payne","Locksmith"],
   groups:["The Roots","The Pharcyde","Das EFX","Group Home","Lost Boyz","Gang Starr","Brand Nubian","Boot Camp Clik","A Tribe Called Quest","De La Soul","Black Star","The Fugees","OutKast","Cocoa Brovaz","EPMD"],
   west:["Dr. Dre","Eminem","Snoop Dogg","Ice Cube","Kendrick Lamar","D Smoke","Dizzy Wright","Too Short","E-40","The Lady of Rage","Ras Kass","Xzibit","Warren G","Kurupt","The Game"],
   modern:["Locksmith","RJ Payne","D Smoke","Dizzy Wright","Papoose","Dave East","Russ","Joey Bada$","JID","Kendrick Lamar","J. Cole","Black Thought","Sa-Roc","Little Simz","Rapsody"],
@@ -199,10 +199,10 @@ async function searchPodcasts(term){
     const data=await response.json(),items=data.results||[];
     if(!items.length){$("podcastGrid").innerHTML='<div class="empty">No shows found. Try another topic or host.</div>';return;}
     $("podcastGrid").innerHTML=items.map(show=>{
-      const key="podcast:"+show.collectionId,url=show.collectionViewUrl||show.feedUrl||"#",isSaved=saved(key);
+      const key="podcast:"+show.collectionId,url=show.collectionViewUrl||(show.collectionId?"https://podcasts.apple.com/podcast/id"+show.collectionId:"")||show.artistViewUrl||show.feedUrl||"#",openLabel=show.collectionViewUrl||show.collectionId?"Open show directory ↗":show.artistViewUrl?"Visit publisher ↗":"Open show feed ↗",isSaved=saved(key);
       const savedItem=encodeURIComponent(JSON.stringify({key,title:show.collectionName||"Podcast",subtitle:show.artistName||"Publisher",type:"podcast",url}));
       const art=show.artworkUrl100?'<img class="pod-art" loading="lazy" src="'+safe(show.artworkUrl100)+'" alt="">':'<div class="pod-art">🎙</div>';
-      return '<article class="pod-card">'+art+'<div class="pod-info"><h3>'+safe(show.collectionName||"Podcast")+'</h3><p class="muted">'+safe(show.artistName||"Publisher")+(show.primaryGenreName?" · "+safe(show.primaryGenreName):"")+'</p></div><div class="actions"><a class="mini" target="_blank" rel="noopener" href="'+safe(url)+'">Open show ↗</a><button class="mini '+(isSaved?"saved":"")+'" type="button" data-save-pod="'+savedItem+'">'+(isSaved?"♥ Saved":"♡ Follow")+'</button></div></article>';
+      return '<article class="pod-card">'+art+'<div class="pod-info"><h3>'+safe(show.collectionName||"Podcast")+'</h3><p class="muted">'+safe(show.artistName||"Publisher")+(show.primaryGenreName?" · "+safe(show.primaryGenreName):"")+'</p></div><div class="actions"><a class="mini" target="_blank" rel="noopener noreferrer" href="'+safe(url)+'">'+openLabel+'</a><button class="mini '+(isSaved?"saved":"")+'" type="button" data-save-pod="'+savedItem+'">'+(isSaved?"♥ Saved":"♡ Follow")+'</button></div></article>';
     }).join("");
   }catch(error){$("podcastGrid").innerHTML='<div class="empty">'+safe(error.message)+'</div>';}
 }
