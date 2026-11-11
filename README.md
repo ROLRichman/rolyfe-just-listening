@@ -151,3 +151,12 @@ The current station can be saved directly below **Next** as well as from its hea
 
 
 The floating player is branded **RO’Lyfe Music Stations** in the listening lounge, with its current-station save action directly beneath the main transport controls.
+
+
+## Expanded chart discovery and conversational Atlas
+
+- Popular & Trending requests 24 Last.fm tracks per page and offers a Load 24 more tracks control. The Last.fm Edge Function has been raised from a 12-item cap to a maximum of 50 per upstream page; the page can continue paging through Last.fm chart pages.
+- Added genre chart filters for Old School Hip-Hop, Neo-Soul, Dancehall, Afrobeats, Soca, Kompa/Zouk, Jazz, Rock, Electronic and Latin, alongside Global, Hip-Hop, R&B/Soul, Reggae and Pop.
+- Rankings are Last.fm global or genre chart data. A Last.fm popularity chart is discovery metadata, not a guarantee of real-time Spotify stream ranking or licensed playback.
+- Atlas has a chat composer and transcript. Typed messages and microphone transcripts use the same conversational route, receive the visitor's selected voice-language instruction, and return a constrained action that the page executes for radio, genre charts, artists, podcasts, saved items and lyricist collections.
+- The new rolyfe-atlas Supabase Edge Function calls OpenAI's Responses API server-side. Its OpenAI credential must be stored only as the OPENAI_API_KEY Supabase Edge Function secret. Never put that key in listening.js, HTML, GitHub, or browser storage. If the secret is absent, Atlas displays a clear setup message instead of pretending the model is connected.
