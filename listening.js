@@ -8,7 +8,7 @@ const $=id=>document.getElementById(id);
 const state={
   trend:"all",tracks:[],saved:readSaved(),artistGeneration:0,
   aiEnabled:readAIEnabled(),recognition:null,lastSpeech:"",
-  preferredVoice:null,currentArtist:null
+  preferredVoice:null,currentArtist:null,voiceVolume:65,voiceLanguage:"en-US",artistPickPage:0
 };
 const ARTIST_COLLECTIONS={
   headliners:["The Notorious B.I.G.","2Pac","Nas","Jay-Z","Big Pun","Fat Joe","Dr. Dre","Eminem","Snoop Dogg","Ice Cube","Lil Wayne","Andre 3000","LL Cool J","Beanie Sigel","Jadakiss"],
@@ -210,10 +210,16 @@ async function searchPodcasts(term){
 /* Artist discovery uses the existing Last.fm Edge Function. */
 function initArtistPicks(){
   const category=$("artistCategory")?.value||"headliners";
-  const names=(ARTIST_COLLECTIONS[category]||ARTIST_COLLECTIONS.headliners).slice(0,15);
+  const all=ARTIST_COLLECTIONS[category]||ARTIST_COLLECTIONS.headliners;
+  const pages=Math.max(1,Math.ceil(all.length/15));
+  state.artistPickPage=Math.min(state.artistPickPage,pages-1);
+  const names=all.slice(state.artistPickPage*15,state.artistPickPage*15+15);
   $("artistQuickPicks").innerHTML=names.map(name=>'<button class="artist-chip" type="button" data-artist-quick="'+safe(name)+'">'+safe(name)+'</button>').join("");
   const count=$("artistPickCount");
-  if(count)count.textContent=names.length+" artists shown · search any name above";
+  if(count)count.textContent=names.length+" shown · page "+(state.artistPickPage+1)+" of "+pages;
+  const prev=$("artistPickPrev"),next=$("artistPickNext");
+  if(prev){prev.disabled=state.artistPickPage===0;prev.hidden=pages===1;}
+  if(next){next.disabled=state.artistPickPage>=pages-1;next.hidden=pages===1;}
 }
 async function searchArtists(query){
   const term=String(query||"").trim();
@@ -363,7 +369,12 @@ function bind(){
     $("atlasVolumeValue").textContent=state.voiceVolume+"%";
     try{localStorage.setItem("rolyfeJustListening.atlasVolume.v1",String(state.voiceVolume));}catch(_){}
   });
-  $("artistCategory").addEventListener("change",initArtistPicks);
+  $("artistCategory").addEventListener("change",()=>{state.artistPickPage=0;initArtistPicks();});
+  $("artistPickPrev").addEventListener("click",()=>{state.artistPickPage=Math.max(0,state.artistPickPage-1);initArtistPicks();});
+  $("artistPickNext").addEventListener("click",()=>{state.artistPickPage++;initArtistPicks();});
+  $("atlasLanguage").addEventListener("change",()=>{
+    try{localStorage.setItem("rolyfeJustListening.atlasLanguage.v1",state.voiceLanguage);}catch(_){}
+  });
   $("startRadio").addEventListener("click",()=>{launchRadio();setAtlasMessage("Live radio is ready. Choose a station and press Play when you're ready.",true);});
   $("refreshTrending").addEventListener("click",()=>loadTrending(state.trend));
   document.querySelectorAll("[data-trend]").forEach(button=>button.addEventListener("click",()=>loadTrending(button.dataset.trend)));
@@ -449,6 +460,7 @@ function init(){
   try{
     const stored=Number(localStorage.getItem("rolyfeJustListening.atlasVolume.v1"));
     if(Number.isFinite(stored)&&stored>=0&&stored<=100)state.voiceVolume=stored;
+    state.voiceLanguage=localStorage.getItem("rolyfeJustListening.atlasLanguage.v1")||"en-US";
   }catch(_){}
   bind();renderSaved();renderArtistPicks();
   $("atlasVolume").value=String(state.voiceVolume);
