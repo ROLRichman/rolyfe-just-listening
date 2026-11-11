@@ -215,3 +215,12 @@ Atlas now receives a small, server-validated snapshot of the currently active pa
 The page has one-tap **Read this spotlight**, **Read artist matches**, **Read this chart**, and **Read podcast matches** controls. Atlas also uses the active context when a visitor asks a question in chat or by microphone, so the visitor can ask her to explain what is already on screen.
 
 Atlas receives only fields supplied by the current page/provider response. She is instructed not to invent missing details. Last.fm listeners and plays remain Last.fm metrics; MusicBrainz album/EP totals remain indexed release-group counts, not a promise of a complete discography. Podcast listings do not include episode summaries unless the provider returns them. Context is validated and clipped by the server before being sent to the model; provider text is treated as reference data, not instructions. The OpenAI key remains server-side in the Supabase Edge Function secret.
+
+## Atlas conversation and artist-reader refinements
+
+- The Atlas header's **−** control minimizes the panel instead of ending the conversation. The floating Atlas dock becomes **Return to Atlas** and reopens the existing in-page transcript for the current page session.
+- Turning Atlas off remains a separate action; it disables speech and microphone use.
+- Added **Read this artist collection** for the currently visible page of curated artist chips. The Atlas service validates and forwards the category, page number and visible artist names.
+- Artist-search statistics are now attached by exact MusicBrainz ID when possible, or only by an unambiguous one-to-one artist-name match. This prevents duplicate-name artists from inheriting another performer's Last.fm listener count.
+- Artist result cards switch to a single-column layout on narrower displays and allow identity details to wrap cleanly.
+- The rolyfe-atlas Edge Function is active at version 3 and accepts the curated artist-collection context. Its OpenAI API key remains server-side in Supabase as OPENAI_API_KEY.
