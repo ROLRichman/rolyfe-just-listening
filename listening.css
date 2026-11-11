@@ -56,3 +56,26 @@
   .back-top{left:auto;right:10px;bottom:calc(70px + env(safe-area-inset-bottom,0px));z-index:100020}
   .atlas{left:10px;right:auto;bottom:calc(64px + env(safe-area-inset-bottom,0px));width:calc(100vw - 20px);max-height:min(70vh,560px);max-height:min(70dvh,560px)}
 }
+
+
+/* Expanded global and genre discovery chart. */
+.chart-note{display:flex;align-items:center;gap:9px;margin:9px 0 14px;color:#a7bcae}
+.chart-note span{flex:none;color:var(--green);font-size:9px;font-weight:900;letter-spacing:1.2px}
+.chart-note small{font-size:10px;line-height:1.5}
+.load-more-wrap{display:flex;justify-content:center;padding:17px 0 2px}
+.load-more{border:1px solid #4a7356;border-radius:999px;padding:11px 19px;background:#173322;color:#dff8e4;font-size:12px;font-weight:900}
+.load-more:hover{border-color:var(--green);color:var(--green)}
+.load-more:disabled{opacity:.6;cursor:wait}
+.filters button{white-space:nowrap}
+@media(max-width:620px){.filters{gap:6px}.filters button{font-size:10px;padding:8px 10px}}
+/* Atlas now has a real conversational workspace. */
+.atlas-chat-log{display:grid;gap:7px;max-height:190px;overflow:auto;margin:10px 0 8px;padding:2px 1px;overscroll-behavior:contain;scrollbar-width:thin}
+.atlas-chat-message{max-width:94%;padding:8px 10px;border:1px solid #ffffff16;border-radius:12px;background:#0d1913}
+.atlas-chat-message.user{justify-self:end;border-color:#3e7850;background:#173322}
+.atlas-chat-message small{display:block;color:#9ddbac;font-size:8px;font-weight:900;letter-spacing:1px}
+.atlas-chat-message p{margin:3px 0 0;color:#e4f0e7;font-size:11px;line-height:1.5;overflow-wrap:anywhere}
+.atlas-chat-form{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:7px;margin:7px 0 10px}
+.atlas-chat-form input{min-width:0;width:100%;border:1px solid #45644c;border-radius:10px;padding:10px 11px;background:#0c1711;color:#eff9f1;font:inherit;font-size:11px;outline:none}
+.atlas-chat-form input:focus{border-color:#9de5aa}
+.atlas-chat-form button{border:1px solid #70be83;border-radius:10px;padding:9px 13px;background:#b4efc0;color:#102018;font-size:11px;font-weight:900}
+.atlas-chat-form button:disabled{opacity:.55;cursor:wait}
