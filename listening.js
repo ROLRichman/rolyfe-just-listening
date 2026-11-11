@@ -111,18 +111,33 @@ function setAIEnabled(enabled){
     setVoiceStatus("Atlas is on · voice ready");
   }
 }
+function syncAtlasControls(open){
+  const dock=$("atlasDock"),toggle=$("atlasToggle");
+  if(dock){
+    dock.textContent=!state.aiEnabled?"✦ Atlas OFF":(open?"✦ Atlas ON":"✦ Return to Atlas");
+    dock.title=!state.aiEnabled?"Turn Atlas on":(open?"Atlas is open · tap to minimize":"Return to your Atlas conversation");
+    dock.setAttribute("aria-label",!state.aiEnabled?"Turn Atlas on":(open?"Minimize Atlas conversation":"Return to Atlas conversation"));
+  }
+  if(toggle){
+    toggle.textContent=state.aiEnabled?"✦ Atlas ON":"✦ Atlas OFF";
+    toggle.title=open?"Minimize Atlas conversation":"Open Atlas conversation";
+    toggle.setAttribute("aria-label",open?"Minimize Atlas conversation":"Open Atlas conversation");
+  }
+}
 function openAtlas(open=true){
   if(open&&!state.aiEnabled)return;
   $("atlasPanel").classList.toggle("open",open);
   $("atlasPanel").setAttribute("aria-hidden",String(!open));
   $("atlasToggle")?.setAttribute("aria-expanded",String(open));
   $("atlasDock")?.setAttribute("aria-expanded",String(open));
+  syncAtlasControls(open);
 }
 function closeAtlas(){
   $("atlasPanel")?.classList.remove("open");
   $("atlasPanel")?.setAttribute("aria-hidden","true");
   $("atlasToggle")?.setAttribute("aria-expanded","false");
   $("atlasDock")?.setAttribute("aria-expanded","false");
+  syncAtlasControls(false);
 }
 function toggleAtlas(){
   if(!state.aiEnabled){setAIEnabled(true);openAtlas(true);setAtlasMessage("Atlas is back. I'm ready to help you find your next sound.",true);return;}
@@ -350,18 +365,27 @@ async function searchArtists(query){
     const lastData=lastResult.status==="fulfilled"?lastResult.value:null;
     const lastMatches=asArray(lastData?.results?.artistmatches?.artist);
     const mbArtists=mbResult.status==="fulfilled"?asArray(mbResult.value):[];
-    const byName=new Map(lastMatches.map(item=>[String(item.name||"").toLowerCase(),item]));
     const normalized=value=>String(value||"").normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase().replace(/[^a-z0-9]+/g," ").trim();
-    const identities=mbArtists.slice(0,10).map(item=>({
-      name:item.name||term,
-      mbid:item.id||"",
-      disambiguation:item.disambiguation||"",
-      type:item.type||"",
-      area:item.area?.name||item["begin-area"]?.name||"",
-      begin:item["life-span"]?.begin||"",
-      end:item["life-span"]?.end||"",
-      lastfm:byName.get(String(item.name||"").toLowerCase())||null
-    }));
+    const identityNameCounts=new Map(),lastfmNameCounts=new Map();
+    mbArtists.forEach(item=>{const key=normalized(item.name);identityNameCounts.set(key,(identityNameCounts.get(key)||0)+1);});
+    lastMatches.forEach(item=>{const key=normalized(item.name);lastfmNameCounts.set(key,(lastfmNameCounts.get(key)||0)+1);});
+    const identities=mbArtists.slice(0,10).map(item=>{
+      const key=normalized(item.name);
+      const exactMbidMatch=lastMatches.find(match=>item.id&&match.mbid&&String(match.mbid)===String(item.id));
+      const uniqueNameMatch=identityNameCounts.get(key)===1&&lastfmNameCounts.get(key)===1
+        ?lastMatches.find(match=>normalized(match.name)===key)
+        :null;
+      return {
+        name:item.name||term,
+        mbid:item.id||"",
+        disambiguation:item.disambiguation||"",
+        type:item.type||"",
+        area:item.area?.name||item["begin-area"]?.name||"",
+        begin:item["life-span"]?.begin||"",
+        end:item["life-span"]?.end||"",
+        lastfm:exactMbidMatch||uniqueNameMatch
+      };
+    });
     const sameNameCount=identities.filter(item=>normalized(item.name)===normalized(term)).length;
     state.artistMatches=identities.map(item=>({name:item.name,mbid:item.mbid,disambiguation:item.disambiguation,type:item.type,area:item.area,period:item.begin?(item.end?item.begin+"–"+item.end:"since "+item.begin):"",listeners:item.lastfm?.listeners||null}));
     if(identities.length){
@@ -488,6 +512,12 @@ function atlasPageContext(){
     const artist=state.currentArtist;
     return {...context,artist:{name:artist.name,identity:[artist.identity?.disambiguation,artist.identity?.type,artist.identity?.area,artist.identity?.begin?(artist.identity?.end?artist.identity.begin+"–"+artist.identity.end:"since "+artist.identity.begin):""].filter(Boolean).join(" · "),biography:artist.bio||$("artistBio")?.textContent||"",profileDetails:$("artistStats")?.textContent||"",albumsAndEPs:$("albumCount")?.textContent||artist.albumCountText||"Not indexed",albumCountSource:$("albumCount")?.title||artist.albumCountNote||"MusicBrainz release-group count",listeners:$("artistListeners")?.textContent||"—",plays:$("artistPlays")?.textContent||"—",popularAlbums:artist.albums.slice(0,8).map(item=>({title:item.name||"Untitled release",plays:item.playcount?number(item.playcount):"Not supplied"})),topTracks:artist.tracks.slice(0,8).map(item=>({title:item.name||"Untitled track",artist:item.artist?.name||artist.name,plays:item.playcount?number(item.playcount):"Not supplied"})),relatedArtists:artist.relatedArtists.slice(0,10)}};
   }
+  if(state.atlasFocus==="artist_picks"){
+    const category=$("artistCategory")?.value||"headliners";
+    const collection=ARTIST_COLLECTIONS[category]||ARTIST_COLLECTIONS.headliners;
+    const page=Math.max(0,state.artistPickPage||0);
+    return {...context,artistCollection:{category:category.replace(/_/g," "),page:page+1,totalPages:Math.max(1,Math.ceil(collection.length/15)),artists:collection.slice(page*15,page*15+15)}};
+  }
   if(state.atlasFocus==="artist_search")return {...context,query:state.artistSearchQuery,results:state.artistMatches.slice(0,10)};
   if(state.atlasFocus==="podcasts")return {...context,query:state.podcastSearchQuery,results:state.podcastResults.slice(0,12)};
   return {...context,chart:{category:state.trend==="all"?"Global":state.trend,page:state.trackPage,totalPages:state.trackPages,loadedTrackCount:state.tracks.length,tracks:state.tracks.slice(0,36).map((item,index)=>({rank:index+1,title:item.name,artist:item.artist}))}};
@@ -577,7 +607,7 @@ async function sendAtlasMessage(raw){
     });
     const body=await response.json().catch(()=>({}));
     if(response.status===503&&body.code==="OPENAI_API_KEY_MISSING"){
-      throw new Error("Atlas's conversation engine is built, but its OpenAI key has not been added to Supabase yet. Add OPENAI_API_KEY under Edge Functions → Secrets, then try again.");
+      throw new Error("Atlas AI is not connected yet: Supabase is missing the OPENAI_API_KEY secret. Add your OpenAI Platform API key in Supabase → Edge Functions → Secrets for this project, then send your message again. Never paste the key into this chat or the website.");
     }
     if(!response.ok)throw new Error(body.error||"Atlas couldn't reach the conversation service. Please try again.");
     let reply=String(body.reply||"I’m here. Tell me what you would like to listen to.");
@@ -633,7 +663,8 @@ function bind(){
   $("atlasTalk").addEventListener("click",beginVoiceInput);
   $("atlasChatForm").addEventListener("submit",event=>{event.preventDefault();sendAtlasMessage($("atlasChatInput").value);});
   $("atlasReadArtist")?.addEventListener("click",()=>askAtlasToRead("Read this artist spotlight to me. Explain the identity, biography, the displayed album/EP count, listeners, plays, popular releases, top tracks and related artists. Clearly distinguish the data providers."));
-  $("atlasReadArtists")?.addEventListener("click",()=>askAtlasToRead("Read these artist search matches to me. Explain the identity details and any listeners shown, and help distinguish artists with the same name."));
+  $("atlasReadPicks")?.addEventListener("click",()=>{state.atlasFocus="artist_picks";askAtlasToRead("Read this artist collection to me. Introduce the collection's role, then read the artist names shown on this page. Do not invent biographies or statistics that are not in the displayed results.");});
+  $("atlasReadArtists")?.addEventListener("click",()=>askAtlasToRead("Read these artist search matches to me. Explain the identity details and only report listener statistics when they are reliably matched to the selected artist. Help distinguish artists with the same name."));
   $("atlasReadDiscovery")?.addEventListener("click",()=>askAtlasToRead("Read the current discovery chart to me. Tell me which chart this is, what tracks and artists are listed, and the page/rank details available."));
   $("atlasReadPodcasts")?.addEventListener("click",()=>askAtlasToRead("Read these podcast search results to me. Tell me the show names, publishers and categories that are actually listed."));
   $("atlasLanguage").addEventListener("change",()=>{
