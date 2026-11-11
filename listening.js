@@ -137,7 +137,15 @@ function launchRadio(genre){
   if(select&&wanted&&select.value!==wanted){select.value=wanted;select.dispatchEvent(new Event("change",{bubbles:true}));}
 }
 function act(action){
-  if(action==="next"){
+  if(action==="previous"){
+    const previous=radio("rolRadioPrevious");
+    if(previous){previous.click();setAtlasMessage("Going back to the previous radio station.",true);}
+    else{launchRadio();setAtlasMessage("Your Music Stations panel is ready. Choose a station to start listening.",true);}
+  }else if(action==="pause"){
+    const play=radio("rolRadioPlay");
+    if(play){play.click();setAtlasMessage(radio("rolRadioAudio")?.paused?"Resuming your station.":"Pausing the radio.",true);}
+    else{launchRadio();setAtlasMessage("Open Music Stations and choose a station to play.",true);}
+  }else if(action==="next"){
     const next=radio("rolRadioNext");
     if(next){next.click();setAtlasMessage("I'm moving to the next station in the live radio list. It may take a moment to connect.",true);}
     else{launchRadio();setAtlasMessage("Your live radio panel is open. Choose a station and press Play to start the music.",true);}
