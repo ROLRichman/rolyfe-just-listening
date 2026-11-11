@@ -306,6 +306,45 @@ async function attachApplePreview(slot,button,name,artist){
   }
 }
 
+async function loadPodcastEpisodes(collectionId,button){
+  if(!/^\\d{1,15}$/.test(String(collectionId||"")))return;
+  const panel=$("podcastEpisodes");
+  panel.hidden=false;
+  panel.innerHTML='<div class="empty">Loading episodes from the publisher feed…</div>';
+  document.querySelectorAll("[data-load-podcast]").forEach(b=>{b.disabled=true;});
+  try{
+    const response=await fetch("https://nzduinxmsmmdbonefifi.supabase.co/functions/v1/entertainment-podcast-feed?id="+encodeURIComponent(collectionId),{headers:{Accept:"application/xml"}});
+    if(!response.ok){
+      let message="This show’s public episode feed could not be loaded.";
+      try{const data=await response.json();if(data.error)message=data.error;}catch(_){}
+      throw new Error(message);
+    }
+    const xml=await response.text();
+    const doc=new DOMParser().parseFromString(xml,"application/xml");
+    if(doc.querySelector("parsererror"))throw new Error("The publisher’s feed could not be read.");
+    const nodes=[...doc.querySelectorAll("item")].slice(0,20);
+    if(!nodes.length)throw new Error("No playable episodes were listed in this publisher feed.");
+    const get=(node,selector)=>node.querySelector(selector)?.textContent?.trim()||"";
+    const episodes=nodes.map((node,index)=>{
+      const enclosure=node.querySelector("enclosure");
+      const media=enclosure?.getAttribute("url")||node.querySelector("media\\:content, content")?.getAttribute("url")||"";
+      let audio="";
+      try{const u=new URL(media);if(u.protocol==="https:")audio=u.href;}catch(_){}
+      const rawDescription=get(node,"description")||get(node,"itunes\\:summary")||"";
+      const description=rawDescription.replace(/<[^>]*>/g," ").replace(/&nbsp;/gi," ").replace(/&amp;/gi,"&").replace(/&lt;/gi,"<").replace(/&gt;/gi,">").replace(/&quot;/gi,'"').replace(/&#39;/g,"'").replace(/\\s+/g," ").trim().slice(0,260);
+      return {title:get(node,"title")||"Untitled episode",date:get(node,"pubDate"),duration:get(node,"itunes\\:duration"),description,audio,index};
+    }).filter(item=>item.audio);
+    if(!episodes.length)throw new Error("Episodes were found, but this feed did not provide secure HTTPS audio links.");
+    panel.innerHTML='<div class="podcast-episode-head"><div><p class="eyebrow">PUBLISHER FEED</p><h3>Latest episodes</h3><p class="muted">Audio streams directly from the podcast publisher.</p></div><button class="plain" id="closePodcastEpisodes" type="button">Close ×</button></div><div class="episode-list">'+episodes.map((episode,i)=>'<article class="episode-card"><div class="episode-copy"><strong>'+safe(episode.title)+'</strong><small>'+safe(episode.date?new Date(episode.date).toLocaleDateString():"Date not supplied")+(episode.duration?" · "+safe(episode.duration):"")+'</small>'+(episode.description?'<p>'+safe(episode.description)+'</p>':'')+'</div><audio controls preload="none" src="'+safe(episode.audio)+'" aria-label="Play '+safe(episode.title)+'"></audio></article>').join("")+'</div><p class="fine">Up to 20 recent episodes are shown. Availability and playback are controlled by the publisher.</p>';
+    panel.querySelectorAll("audio").forEach(audio=>audio.addEventListener("play",()=>panel.querySelectorAll("audio").forEach(other=>{if(other!==audio)other.pause();})));
+    $("closePodcastEpisodes").addEventListener("click",()=>{panel.hidden=true;panel.innerHTML="";});
+    panel.scrollIntoView({behavior:"smooth",block:"nearest"});
+  }catch(error){
+    panel.innerHTML='<div class="empty">'+safe(error.message||"Podcast episodes could not be loaded.")+' <button class="plain" id="closePodcastEpisodes" type="button">Close ×</button></div>';
+    $("closePodcastEpisodes").addEventListener("click",()=>{panel.hidden=true;panel.innerHTML="";});
+  }finally{document.querySelectorAll("[data-load-podcast]").forEach(b=>{b.disabled=false;});}
+}
+
 async function searchPodcasts(term){
   if(!String(term||"").trim())return;
   state.atlasFocus="podcasts";
@@ -313,6 +352,7 @@ async function searchPodcasts(term){
   state.podcastResults=[];
   const readButton=$("atlasReadPodcasts");if(readButton)readButton.hidden=true;
   $("podcastGrid").innerHTML='<div class="empty">Searching podcast listings…</div>';
+  $("podcastEpisodes").hidden=true;$("podcastEpisodes").innerHTML="";
   try{
     const query=new URLSearchParams({term:String(term).trim(),media:"podcast",entity:"podcast",limit:"12"});
     const response=await fetch("https://itunes.apple.com/search?"+query.toString(),{headers:{Accept:"application/json"}});
@@ -324,8 +364,9 @@ async function searchPodcasts(term){
     $("podcastGrid").innerHTML=items.map(show=>{
       const key="podcast:"+show.collectionId,url=show.collectionViewUrl||(show.collectionId?"https://podcasts.apple.com/podcast/id"+show.collectionId:"")||show.artistViewUrl||show.feedUrl||"#",openLabel=show.collectionViewUrl||show.collectionId?"Open show directory ↗":show.artistViewUrl?"Visit publisher ↗":"Open show feed ↗",isSaved=saved(key);
       const savedItem=encodeURIComponent(JSON.stringify({key,title:show.collectionName||"Podcast",subtitle:show.artistName||"Publisher",type:"podcast",url}));
-      const art=show.artworkUrl100?'<img class="pod-art" loading="lazy" src="'+safe(show.artworkUrl100)+'" alt="">':'<div class="pod-art">🎙</div>';
-      return '<article class="pod-card">'+art+'<div class="pod-info"><h3>'+safe(show.collectionName||"Podcast")+'</h3><p class="muted">'+safe(show.artistName||"Publisher")+(show.primaryGenreName?" · "+safe(show.primaryGenreName):"")+'</p></div><div class="actions"><a class="mini" target="_blank" rel="noopener noreferrer" href="'+safe(url)+'">'+openLabel+'</a><button class="mini '+(isSaved?"saved":"")+'" type="button" data-save-pod="'+savedItem+'">'+(isSaved?"♥ Saved":"♡ Follow")+'</button></div></article>';
+      const art=show.artworkUrl600||show.artworkUrl100?'<img class="pod-art" loading="lazy" src="'+safe(show.artworkUrl600||show.artworkUrl100)+'" alt="">':'<div class="pod-art">🎙</div>';
+      const episodeButton=show.collectionId?'<button class="mini" type="button" data-load-podcast="'+safe(show.collectionId)+'">▶ Episodes</button>':'';
+      return '<article class="pod-card">'+art+'<div class="pod-info"><h3>'+safe(show.collectionName||"Podcast")+'</h3><p class="muted">'+safe(show.artistName||"Publisher")+(show.primaryGenreName?" · "+safe(show.primaryGenreName):"")+'</p></div><div class="actions">'+episodeButton+'<a class="mini" target="_blank" rel="noopener noreferrer" href="'+safe(url)+'">'+openLabel+'</a><button class="mini '+(isSaved?"saved":"")+'" type="button" data-save-pod="'+savedItem+'">'+(isSaved?"♥ Saved":"♡ Follow")+'</button></div></article>';
     }).join("");
   }catch(error){$("podcastGrid").innerHTML='<div class="empty">'+safe(error.message)+'</div>';}
 }
@@ -702,7 +743,7 @@ function bind(){
   $("podcastSearchForm").addEventListener("submit",event=>{event.preventDefault();searchPodcasts($("podcastQuery").value);});
   document.querySelectorAll("[data-podcast-query]").forEach(button=>button.addEventListener("click",()=>{$("podcastQuery").value=button.dataset.podcastQuery;searchPodcasts(button.dataset.podcastQuery);}));
   $("podcastGrid").addEventListener("click",event=>{
-    const button=event.target.closest("[data-save-pod]");if(!button)return;
+    const episodeButton=event.target.closest("[data-load-podcast]");if(episodeButton){loadPodcastEpisodes(episodeButton.dataset.loadPodcast,episodeButton);return;}\n    const button=event.target.closest("[data-save-pod]");if(!button)return;
     try{addSaved(JSON.parse(decodeURIComponent(button.dataset.savePod)));}catch(_){}
   });
   $("savedList").addEventListener("click",event=>{
