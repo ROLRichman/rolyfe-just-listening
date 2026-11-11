@@ -198,3 +198,6 @@ Save it in Supabase only. Do not paste it into the browser, GitHub, this README,
 
 
 The **Country Music** choice is also available in the Your Sound selector and Popular & Trending chart filters, so the genre remains separate from the Explore by Country station-location menu.
+
+
+The **Set as Default** button names the actual station (for example, “Set KLM FM as Default”), and the worldwide country menu includes each country's Radio Browser station count where available. The menu accepts country-code and ISO country catalogue response shapes.
