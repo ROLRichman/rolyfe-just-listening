@@ -45,9 +45,9 @@ The frontend calls the `entertainment-musicbrainz` Supabase Edge Function to loo
 
 The backend should serialize MusicBrainz requests to respect its public rate limit. Review MusicBrainz terms before using the data in a commercial product.
 
-### 4. Podcast search
+### 4. Podcast search and episode playback
 
-Podcast search currently uses the Apple iTunes Search API from the browser. Results show show artwork, title, publisher and category, with links to the publisher or podcast listing. The current implementation is discovery and bookmarking—not a hosted podcast player. Episode playback can be added later using publisher RSS feeds or an authorized podcast provider.
+Podcast search uses the Apple Podcasts/iTunes directory. Results show artwork, title, publisher and category, with links to the publisher or official directory. Where an Apple collection ID and secure public RSS feed are available, the **Episodes** action loads up to 20 recent episodes through the `entertainment-podcast-feed` Supabase Edge Function. The page displays episode metadata and an HTML audio player that streams the publisher's HTTPS enclosure URL directly. It does not download, store, rehost or rebroadcast audio. Some shows do not expose a public feed or secure playable audio; those retain their official publisher/directory link.
 
 ### 5. My Listening List
 
@@ -104,7 +104,7 @@ Before calling the release complete, verify:
 - [ ] Saved Stations can be added, played, removed, and still appear after changing genre/island filters or reloading the page.
 - [ ] Last.fm trending and artist search/profile calls return live data through Supabase.
 - [ ] MusicBrainz album/EP counts return correctly and handle missing matches gracefully.
-- [ ] Podcast search returns shows and the official show links open.
+- [ ] Podcast search returns shows and the official show links open.\n- [ ] Podcast Episodes loads a publisher RSS feed where available, shows recent episodes, and plays publisher-hosted HTTPS audio on Android and desktop.
 - [ ] Save, follow, remove and refresh persistence work for tracks, albums and podcasts.
 - [ ] Atlas ON/OFF, spoken guidance, optional microphone input and Back to Top behave correctly.
 - [ ] Project menu destinations are current and mobile navigation does not overflow.
@@ -113,7 +113,7 @@ Before calling the release complete, verify:
 ## Known limitations and next enhancements
 
 - No account-based cloud sync for My Listening List or radio favorites yet; saved entries are stored in this browser/device. My Listening List covers discovery tracks, albums and podcasts; the radio player has its own Saved Stations shelf.
-- Podcast search currently links to shows; full episode playback is not implemented.
+- Podcast episode playback is available for shows with a public secure RSS feed and HTTPS audio enclosures; private feeds, blocked publishers and unsupported media remain external-link only.
 - Last.fm provides discovery metadata, not full music playback.
 - Atlas does not yet use a general-purpose AI model or neural voice provider.
 - Third-party station streams can be offline, geo-restricted, insecure or unsupported.
@@ -224,3 +224,4 @@ Atlas receives only fields supplied by the current page/provider response. She i
 - Artist-search statistics are now attached by exact MusicBrainz ID when possible, or only by an unambiguous one-to-one artist-name match. This prevents duplicate-name artists from inheriting another performer's Last.fm listener count.
 - Artist result cards switch to a single-column layout on narrower displays and allow identity details to wrap cleanly.
 - The rolyfe-atlas Edge Function is active at version 3 and accepts the curated artist-collection context. Its OpenAI API key remains server-side in Supabase as OPENAI_API_KEY.
+\n\n## Podcast episode playback\n\nPodcast discovery now offers an **Episodes** action for Apple directory results with a collection ID. The page asks the Apple directory for that show’s public feed through the `entertainment-podcast-feed` Supabase Edge Function, then displays up to 20 recent episodes with publisher-hosted HTTPS audio, dates, durations and short descriptions when supplied. Audio is streamed from the publisher; RO’Lyfe does not download, store, rehost or rebroadcast podcast episodes. The player pauses other episode players in the same episode panel. Shows without a secure public RSS feed keep their official directory/publisher link. Feed access is limited to numeric Apple collection IDs, secure public HTTPS feed URLs, bounded redirects, response size and request rate.\n
