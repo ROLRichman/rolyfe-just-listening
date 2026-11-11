@@ -10,7 +10,8 @@ const $=id=>document.getElementById(id);
 const state={
   trend:"all",tracks:[],trackPage:1,trackPages:1,trackLoading:false,saved:readSaved(),artistGeneration:0,
   aiEnabled:readAIEnabled(),recognition:null,lastSpeech:"",atlasHistory:[],atlasBusy:false,
-  preferredVoice:null,currentArtist:null,voiceVolume:65,voiceLanguage:"en-US",artistPickPage:0
+  preferredVoice:null,currentArtist:null,voiceVolume:65,voiceLanguage:"en-US",artistPickPage:0,
+  atlasFocus:"trending",artistSearchQuery:"",artistMatches:[],podcastSearchQuery:"",podcastResults:[]
 };
 const ARTIST_COLLECTIONS={
   headliners:["The Notorious B.I.G.","2Pac","Nas","Jay-Z","Big Pun","Fat Joe","Dr. Dre","Eminem","Snoop Dogg","Ice Cube","Lil Wayne","Andre 3000","LL Cool J","Beanie Sigel","Jadakiss"],
@@ -194,6 +195,8 @@ function renderTracks(){
     more.disabled=state.trackLoading;
     more.textContent=state.trackLoading?"Loading more…":"Load 24 more tracks ↓";
   }
+  const readButton=$("atlasReadDiscovery");
+  if(readButton)readButton.hidden=!state.tracks.length;
 }
 async function lastfm(method,extra={}){
   const params=new URLSearchParams({method,limit:String(TRENDING_PAGE_SIZE),...extra});
@@ -204,6 +207,7 @@ async function lastfm(method,extra={}){
 }
 async function loadTrending(tag=state.trend,append=false){
   if(state.trackLoading)return;
+  state.atlasFocus="trending";
   state.trend=tag;
   if(!append){state.trackPage=1;state.trackPages=1;state.tracks=[];}
   else state.trackPage=Math.min(10,state.trackPage+1);
@@ -289,13 +293,19 @@ async function attachApplePreview(slot,button,name,artist){
 
 async function searchPodcasts(term){
   if(!String(term||"").trim())return;
+  state.atlasFocus="podcasts";
+  state.podcastSearchQuery=String(term).trim();
+  state.podcastResults=[];
+  const readButton=$("atlasReadPodcasts");if(readButton)readButton.hidden=true;
   $("podcastGrid").innerHTML='<div class="empty">Searching podcast listings…</div>';
   try{
     const query=new URLSearchParams({term:String(term).trim(),media:"podcast",entity:"podcast",limit:"12"});
     const response=await fetch("https://itunes.apple.com/search?"+query.toString(),{headers:{Accept:"application/json"}});
     if(!response.ok)throw new Error("Podcast directory did not respond.");
     const data=await response.json(),items=data.results||[];
+    state.podcastResults=items.slice(0,12).map(show=>({title:show.collectionName||"Podcast",publisher:show.artistName||"Publisher",category:show.primaryGenreName||"",releaseDate:show.releaseDate||""}));
     if(!items.length){$("podcastGrid").innerHTML='<div class="empty">No shows found. Try another topic or host.</div>';return;}
+    if(readButton)readButton.hidden=false;
     $("podcastGrid").innerHTML=items.map(show=>{
       const key="podcast:"+show.collectionId,url=show.collectionViewUrl||(show.collectionId?"https://podcasts.apple.com/podcast/id"+show.collectionId:"")||show.artistViewUrl||show.feedUrl||"#",openLabel=show.collectionViewUrl||show.collectionId?"Open show directory ↗":show.artistViewUrl?"Visit publisher ↗":"Open show feed ↗",isSaved=saved(key);
       const savedItem=encodeURIComponent(JSON.stringify({key,title:show.collectionName||"Podcast",subtitle:show.artistName||"Publisher",type:"podcast",url}));
@@ -322,6 +332,10 @@ function initArtistPicks(){
 async function searchArtists(query){
   const term=String(query||"").trim();
   if(!term)return;
+  state.atlasFocus="artist_search";
+  state.artistSearchQuery=term;
+  state.artistMatches=[];
+  const readButton=$("atlasReadArtists");if(readButton)readButton.hidden=true;
   $("artistProfile").hidden=true;
   $("artistResults").innerHTML='<div class="empty">Checking artist identities…</div>';
   try{
@@ -349,7 +363,9 @@ async function searchArtists(query){
       lastfm:byName.get(String(item.name||"").toLowerCase())||null
     }));
     const sameNameCount=identities.filter(item=>normalized(item.name)===normalized(term)).length;
+    state.artistMatches=identities.map(item=>({name:item.name,mbid:item.mbid,disambiguation:item.disambiguation,type:item.type,area:item.area,period:item.begin?(item.end?item.begin+"–"+item.end:"since "+item.begin):"",listeners:item.lastfm?.listeners||null}));
     if(identities.length){
+      if(readButton)readButton.hidden=false;
       const note=sameNameCount>1
         ?'<div class="artist-match-note"><strong>More than one artist uses this name.</strong> Choose the correct identity before opening the profile.</div>'
         :'<div class="artist-match-note">Artist identities are matched using MusicBrainz, with Last.fm listening statistics where available.</div>';
@@ -361,7 +377,9 @@ async function searchArtists(query){
       }).join("");
       return;
     }
-    if(!lastMatches.length){$("artistResults").innerHTML='<div class="empty">No artist match found. Try another spelling or search a related group.</div>';return;}
+    if(!lastMatches.length){$("artistMatches").hidden=true;$("artistResults").innerHTML='<div class="empty">No artist match found. Try another spelling or search a related group.</div>';return;}
+    state.artistMatches=lastMatches.slice(0,8).map(item=>({name:item.name||term,mbid:item.mbid||"",listeners:item.listeners||null,disambiguation:"",type:"",area:"",period:""}));
+    if(readButton)readButton.hidden=false;
     $("artistResults").innerHTML=lastMatches.slice(0,8).map(item=>{
       const image=imageUrl(item),name=item.name||term,mbid=item.mbid||"";
       const art=image?'<img src="'+safe(image)+'" alt="" loading="lazy">':'<span class="artist-placeholder">♫</span>';
@@ -381,6 +399,7 @@ function renderArtistProfileButtons(){
 }
 async function loadDiscography(name,mbid,generation){
   $("albumCount").textContent="Checking…";
+  if(state.currentArtist&&state.currentArtist.name===name)state.currentArtist.albumCountText="Checking…";
   try{
     const query=new URLSearchParams({action:"discography",artist:name});
     if(mbid)query.set("mbid",mbid);
@@ -390,13 +409,15 @@ async function loadDiscography(name,mbid,generation){
     if(!response.ok||data.error)throw new Error(data.error||"Discography lookup unavailable.");
     $("albumCount").textContent=number(data.count);
     $("albumCount").title=data.note||"MusicBrainz album and EP release-group count";
+    if(state.currentArtist&&state.currentArtist.name===name){state.currentArtist.albumCountText=$("albumCount").textContent;state.currentArtist.albumCountNote=$("albumCount").title;}
   }catch(_){
-    if(generation===state.artistGeneration)$("albumCount").textContent="Not indexed";
+    if(generation===state.artistGeneration){$("albumCount").textContent="Not indexed";if(state.currentArtist&&state.currentArtist.name===name){state.currentArtist.albumCountText="Not indexed";state.currentArtist.albumCountNote="MusicBrainz did not return a release-group count.";}}
   }
 }
 async function loadArtist(name,mbid="",identity={}){
+  state.atlasFocus="artist_profile";
   const generation=++state.artistGeneration;
-  state.currentArtist={name,mbid,identity,albums:[],tracks:[]};
+  state.currentArtist={name,mbid,identity,albums:[],tracks:[],bio:"",listeners:null,plays:null,albumCountText:"Checking…",albumCountNote:"MusicBrainz album and EP release-group count",relatedArtists:[]};
   $("artistProfile").hidden=false;
   $("artistResults").innerHTML="";
   $("artistName").textContent=name;
@@ -424,6 +445,9 @@ async function loadArtist(name,mbid="",identity={}){
     state.currentArtist.mbid=info.mbid||mbid;
     state.currentArtist.albums=asArray(albumData.topalbums?.album);
     state.currentArtist.tracks=asArray(trackData.toptracks?.track);
+    state.currentArtist.bio=bio;
+    state.currentArtist.listeners=info.listeners||stats.listeners||null;
+    state.currentArtist.plays=info.playcount||stats.playcount||null;
     $("artistName").textContent=realName;
     const identityText=[identity.disambiguation,identity.type,identity.area,identity.begin?(identity.end?identity.begin+"–"+identity.end:"since "+identity.begin):""].filter(Boolean).join(" · ");
     $("artistStats").textContent=[identityText,info.listeners?number(info.listeners)+" Last.fm listeners":"",info.streamable?"Artist profile":"Artist catalog"].filter(Boolean).join(" · ");
@@ -445,6 +469,7 @@ async function loadArtist(name,mbid="",identity={}){
       return '<article class="track-card"><div class="track-top"><span class="track-icon">♫</span><span class="rank">TRACK '+(index+1)+'</span></div><h3>'+safe(trackObj.name)+'</h3><p class="muted">'+safe(trackObj.artist)+'</p><div class="actions"><button class="mini preview-lookup" type="button" data-preview-artist-track="'+index+'">▶ Find preview</button><a class="mini" target="_blank" rel="noopener noreferrer" href="'+safe(openLinkSearch("spotify",trackObj.name,trackObj.artist))+'">Spotify ↗</a><a class="mini" target="_blank" rel="noopener noreferrer" href="'+safe(lyricsSearchLink(trackObj.name,trackObj.artist))+'">Lyrics ↗</a><button class="mini '+(isSaved?"saved":"")+'" data-save-artist-track="'+index+'">'+(isSaved?"♥ Saved":"♡ Save")+'</button></div><div class="preview-slot" id="artist-preview-'+index+'"></div></article>';
     }).join(""):'<div class="empty">No top tracks were returned for this artist.</div>';
     const similar=asArray(similarData.similarartists?.artist).slice(0,10);
+    state.currentArtist.relatedArtists=similar.map(item=>item.name).filter(Boolean);
     $("similarArtists").innerHTML=similar.map(item=>'<button type="button" class="similar-chip" data-similar-artist="'+safe(item.name)+'">'+safe(item.name)+'</button>').join("")||'<span class="muted">No related artists listed.</span>';
     if(!bio) $("artistBio").textContent="No biography was returned for this artist. Their music catalog is below.";
     $("artistProfile").scrollIntoView({behavior:"smooth",block:"start"});
@@ -457,6 +482,21 @@ async function loadArtist(name,mbid="",identity={}){
   }
 }
 
+function atlasPageContext(){
+  const context={section:state.atlasFocus||"trending"};
+  if(state.atlasFocus==="artist_profile"&&state.currentArtist){
+    const artist=state.currentArtist;
+    return {...context,artist:{name:artist.name,identity:[artist.identity?.disambiguation,artist.identity?.type,artist.identity?.area,artist.identity?.begin?(artist.identity?.end?artist.identity.begin+"–"+artist.identity.end:"since "+artist.identity.begin):""].filter(Boolean).join(" · "),biography:artist.bio||$("artistBio")?.textContent||"",profileDetails:$("artistStats")?.textContent||"",albumsAndEPs:$("albumCount")?.textContent||artist.albumCountText||"Not indexed",albumCountSource:$("albumCount")?.title||artist.albumCountNote||"MusicBrainz release-group count",listeners:$("artistListeners")?.textContent||"—",plays:$("artistPlays")?.textContent||"—",popularAlbums:artist.albums.slice(0,8).map(item=>({title:item.name||"Untitled release",plays:item.playcount?number(item.playcount):"Not supplied"})),topTracks:artist.tracks.slice(0,8).map(item=>({title:item.name||"Untitled track",artist:item.artist?.name||artist.name,plays:item.playcount?number(item.playcount):"Not supplied"})),relatedArtists:artist.relatedArtists.slice(0,10)}};
+  }
+  if(state.atlasFocus==="artist_search")return {...context,query:state.artistSearchQuery,results:state.artistMatches.slice(0,10)};
+  if(state.atlasFocus==="podcasts")return {...context,query:state.podcastSearchQuery,results:state.podcastResults.slice(0,12)};
+  return {...context,chart:{category:state.trend==="all"?"Global":state.trend,page:state.trackPage,totalPages:state.trackPages,loadedTrackCount:state.tracks.length,tracks:state.tracks.slice(0,36).map((item,index)=>({rank:index+1,title:item.name,artist:item.artist}))}};
+}
+function askAtlasToRead(prompt){
+  if(!state.aiEnabled)setAIEnabled(true);
+  openAtlas(true);
+  sendAtlasMessage(prompt);
+}
 function appendAtlasChat(role,text){
   const log=$("atlasChatLog");
   if(!log)return;
@@ -533,7 +573,7 @@ async function sendAtlasMessage(raw){
     const response=await fetch(ATLAS_API,{
       method:"POST",
       headers:{"Content-Type":"application/json","Accept":"application/json"},
-      body:JSON.stringify({messages:state.atlasHistory,language:getSelectedLanguageName()})
+      body:JSON.stringify({messages:state.atlasHistory,language:getSelectedLanguageName(),pageContext:atlasPageContext()})
     });
     const body=await response.json().catch(()=>({}));
     if(response.status===503&&body.code==="OPENAI_API_KEY_MISSING"){
@@ -592,6 +632,10 @@ function bind(){
   $("atlasSpeak").addEventListener("click",()=>say(state.lastSpeech||"Hello there. Welcome to RO’Lyfe Just Listening. I'm Atlas, your listening guide. What would you like to discover today?"));
   $("atlasTalk").addEventListener("click",beginVoiceInput);
   $("atlasChatForm").addEventListener("submit",event=>{event.preventDefault();sendAtlasMessage($("atlasChatInput").value);});
+  $("atlasReadArtist")?.addEventListener("click",()=>askAtlasToRead("Read this artist spotlight to me. Explain the identity, biography, the displayed album/EP count, listeners, plays, popular releases, top tracks and related artists. Clearly distinguish the data providers."));
+  $("atlasReadArtists")?.addEventListener("click",()=>askAtlasToRead("Read these artist search matches to me. Explain the identity details and any listeners shown, and help distinguish artists with the same name."));
+  $("atlasReadDiscovery")?.addEventListener("click",()=>askAtlasToRead("Read the current discovery chart to me. Tell me which chart this is, what tracks and artists are listed, and the page/rank details available."));
+  $("atlasReadPodcasts")?.addEventListener("click",()=>askAtlasToRead("Read these podcast search results to me. Tell me the show names, publishers and categories that are actually listed."));
   $("atlasLanguage").addEventListener("change",()=>{
     state.voiceLanguage=$("atlasLanguage").value;
     readVoices();
