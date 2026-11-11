@@ -462,6 +462,7 @@ function init(){
     if(Number.isFinite(stored)&&stored>=0&&stored<=100)state.voiceVolume=stored;
     state.voiceLanguage=localStorage.getItem("rolyfeJustListening.atlasLanguage.v1")||"en-US";
   }catch(_){}
+  readVoices();
   bind();renderSaved();renderArtistPicks();
   $("atlasVolume").value=String(state.voiceVolume);
   $("atlasVolumeValue").textContent=state.voiceVolume+"%";
