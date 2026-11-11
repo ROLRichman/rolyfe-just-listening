@@ -148,3 +148,6 @@ Atlas now exposes the speech voices installed by the visitor's browser/device th
 
 
 The current station can be saved directly below **Next** as well as from its heart icon in the available-station list. The floating radio launcher now sits at the lower-right on mobile; Atlas stays at the lower-left, and Back to Top is stacked above Radio instead of overlapping the left-side content.
+
+
+The floating player is branded **RO’Lyfe Music Stations** in the listening lounge, with its current-station save action directly beneath the main transport controls.
