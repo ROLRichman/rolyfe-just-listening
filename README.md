@@ -160,3 +160,13 @@ The floating player is branded **RO’Lyfe Music Stations** in the listening lou
 - Rankings are Last.fm global or genre chart data. A Last.fm popularity chart is discovery metadata, not a guarantee of real-time Spotify stream ranking or licensed playback.
 - Atlas has a chat composer and transcript. Typed messages and microphone transcripts use the same conversational route, receive the visitor's selected voice-language instruction, and return a constrained action that the page executes for radio, genre charts, artists, podcasts, saved items and lyricist collections.
 - The new rolyfe-atlas Supabase Edge Function calls OpenAI's Responses API server-side. Its OpenAI credential must be stored only as the OPENAI_API_KEY Supabase Edge Function secret. Never put that key in listening.js, HTML, GitHub, or browser storage. If the secret is absent, Atlas displays a clear setup message instead of pretending the model is connected.
+
+
+### Atlas AI activation
+
+The Atlas conversation Edge Function is deployed as `rolyfe-atlas` and uses the OpenAI Responses API with model `gpt-6.1-terra`. To activate model-backed chat and natural-language voice commands, open the Supabase project for RO’Lyfe JUST LISTENING integrations, go to **Edge Functions → Secrets**, and add:
+
+- Key: `OPENAI_API_KEY`
+- Value: the OpenAI API key created in the OpenAI Platform
+
+Save it in Supabase only. Do not paste it into the browser, GitHub, this README, or a chat message. Supabase makes newly saved Edge Function secrets available without a redeploy. If it is not configured, the page displays a setup notice rather than claiming Atlas is using an AI model.
