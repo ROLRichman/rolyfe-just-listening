@@ -178,7 +178,7 @@ function trackKey(track){return "track:"+String(track.name||"").toLowerCase()+"|
 function renderTracks(){
   $("trendingGrid").innerHTML=state.tracks.length?state.tracks.map((track,index)=>{
     const key=trackKey(track),isSaved=saved(key);
-    return '<article class="track-card"><div class="track-top"><span class="track-icon">♫</span><span class="rank">#'+(index+1)+'</span></div><h3>'+safe(track.name)+'</h3><p class="muted">'+safe(track.artist||"Artist")+'</p><div class="actions"><a class="mini" target="_blank" rel="noopener noreferrer" href="'+safe(openLinkSearch("spotify",track.name,track.artist))+'">Spotify ↗</a><a class="mini" target="_blank" rel="noopener noreferrer" href="'+safe(openLinkSearch("youtube",track.name,track.artist))+'">YouTube Music ↗</a><a class="mini" target="_blank" rel="noopener noreferrer" href="'+safe(lyricsSearchLink(track.name,track.artist))+'">Lyrics ↗</a><button class="mini '+(isSaved?"saved":"")+'" type="button" data-save-track="'+index+'">'+(isSaved?"♥ Saved":"♡ Save")+'</button></div></article>';
+    return '<article class="track-card"><div class="track-top"><span class="track-icon">♫</span><span class="rank">#'+(index+1)+'</span></div><h3>'+safe(track.name)+'</h3><p class="muted">'+safe(track.artist||"Artist")+'</p><div class="actions"><button class="mini preview-lookup" type="button" data-preview-track="'+index+'">▶ Find preview</button><a class="mini" target="_blank" rel="noopener noreferrer" href="'+safe(openLinkSearch("spotify",track.name,track.artist))+'">Spotify ↗</a><a class="mini" target="_blank" rel="noopener noreferrer" href="'+safe(openLinkSearch("youtube",track.name,track.artist))+'">YouTube Music ↗</a><a class="mini" target="_blank" rel="noopener noreferrer" href="'+safe(lyricsSearchLink(track.name,track.artist))+'">Lyrics ↗</a><button class="mini '+(isSaved?"saved":"")+'" type="button" data-save-track="'+index+'">'+(isSaved?"♥ Saved":"♡ Save")+'</button></div><div class="preview-slot" id="trend-preview-'+index+'"></div></article>';
   }).join(""):'<div class="empty">No tracks loaded. Try Refresh or choose another genre.</div>';
   const more=$("loadMoreTracks");
   if(more){
@@ -225,6 +225,60 @@ async function loadTrending(tag=state.trend,append=false){
     renderTracks();
   }
 }
+
+function normalizeCatalogText(value){
+  return String(value||"").normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase().replace(/[^a-z0-9]+/g," ").trim();
+}
+async function findAppleTrack(name,artist){
+  const term=[artist,name].filter(Boolean).join(" ");
+  const query=new URLSearchParams({term,entity:"song",media:"music",limit:"12",country:"US"});
+  const response=await fetch("https://itunes.apple.com/search?"+query.toString(),{headers:{Accept:"application/json"}});
+  if(!response.ok)throw new Error("Apple Music preview search is temporarily unavailable.");
+  const data=await response.json();
+  const wantedTitle=normalizeCatalogText(name),wantedArtist=normalizeCatalogText(artist);
+  const results=asArray(data.results);
+  const scored=results.map(item=>{
+    const title=normalizeCatalogText(item.trackName),performer=normalizeCatalogText(item.artistName);
+    let score=0;
+    if(title===wantedTitle)score+=5;
+    else if(title.includes(wantedTitle)||wantedTitle.includes(title))score+=2;
+    if(performer===wantedArtist)score+=6;
+    else if(performer.includes(wantedArtist)||wantedArtist.includes(performer))score+=3;
+    return {item,score};
+  }).filter(result=>result.score>=8).sort((a,b)=>b.score-a.score);
+  return scored[0]?.item||null;
+}
+async function attachApplePreview(slot,button,name,artist){
+  if(!slot||button.dataset.previewLoaded==="true")return;
+  button.disabled=true;
+  button.textContent="Finding preview…";
+  try{
+    const item=await findAppleTrack(name,artist);
+    if(!item){
+      slot.innerHTML='<small class="preview-note">No matching Apple Music preview was returned. Use Spotify or YouTube Music to open the track.</small>';
+      button.dataset.previewLoaded="true";
+      button.textContent="Preview unavailable";
+      return;
+    }
+    const preview=safeHref(item.previewUrl);
+    const store=safeHref(item.trackViewUrl);
+    const storeLink=store?'<a class="mini apple-store-link" target="_blank" rel="noopener noreferrer" href="'+safe(store)+'">Apple Music ↗</a>':"";
+    if(preview){
+      slot.innerHTML='<div class="preview-ready"><span class="preview-label">30-SECOND PREVIEW</span><audio class="itunes-preview" controls preload="none" src="'+safe(preview)+'"></audio>'+storeLink+'</div>';
+      button.textContent="Preview ready";
+    }else{
+      slot.innerHTML='<small class="preview-note">Apple Music has this track, but no preview clip is available.</small>'+storeLink;
+      button.textContent="No preview clip";
+    }
+    button.dataset.previewLoaded="true";
+  }catch(error){
+    slot.innerHTML='<small class="preview-note">'+safe(error.message||"Preview lookup failed.")+'</small>';
+    button.textContent="Try preview again";
+  }finally{
+    button.disabled=false;
+  }
+}
+
 async function searchPodcasts(term){
   if(!String(term||"").trim())return;
   $("podcastGrid").innerHTML='<div class="empty">Searching podcast listings…</div>';
@@ -261,18 +315,51 @@ async function searchArtists(query){
   const term=String(query||"").trim();
   if(!term)return;
   $("artistProfile").hidden=true;
-  $("artistResults").innerHTML='<div class="empty">Searching Last.fm for '+safe(term)+'…</div>';
+  $("artistResults").innerHTML='<div class="empty">Checking artist identities…</div>';
   try{
-    const data=await lastfm("artist.search",{artist:term});
-    const container=data.results?.artistmatches?.artist||[];
-    const matches=asArray(container).slice(0,8);
-    if(!matches.length){$("artistResults").innerHTML='<div class="empty">No artist match found. Try another spelling or search a related group.</div>';return;}
-    $("artistResults").innerHTML=matches.map(item=>{
+    const [lastResult,mbResult]=await Promise.allSettled([
+      lastfm("artist.search",{artist:term}),
+      fetch(MB_API+"?"+new URLSearchParams({action:"search",artist:term}),{headers:{Accept:"application/json"}}).then(async response=>{
+        const data=await response.json();
+        if(!response.ok||data.error)throw new Error(data.error||"MusicBrainz identity search unavailable.");
+        return data.artists||[];
+      })
+    ]);
+    const lastData=lastResult.status==="fulfilled"?lastResult.value:null;
+    const lastMatches=asArray(lastData?.results?.artistmatches?.artist);
+    const mbArtists=mbResult.status==="fulfilled"?asArray(mbResult.value):[];
+    const byName=new Map(lastMatches.map(item=>[String(item.name||"").toLowerCase(),item]));
+    const normalized=value=>String(value||"").normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase().replace(/[^a-z0-9]+/g," ").trim();
+    const identities=mbArtists.slice(0,10).map(item=>({
+      name:item.name||term,
+      mbid:item.id||"",
+      disambiguation:item.disambiguation||"",
+      type:item.type||"",
+      area:item.area?.name||item["begin-area"]?.name||"",
+      begin:item["life-span"]?.begin||"",
+      end:item["life-span"]?.end||"",
+      lastfm:byName.get(String(item.name||"").toLowerCase())||null
+    }));
+    const sameNameCount=identities.filter(item=>normalized(item.name)===normalized(term)).length;
+    if(identities.length){
+      const note=sameNameCount>1
+        ?'<div class="artist-match-note"><strong>More than one artist uses this name.</strong> Choose the correct identity before opening the profile.</div>'
+        :'<div class="artist-match-note">Artist identities are matched using MusicBrainz, with Last.fm listening statistics where available.</div>';
+      $("artistResults").innerHTML=note+identities.map(item=>{
+        const artUrl=imageUrl(item.lastfm||{}),art=artUrl?'<img src="'+safe(artUrl)+'" alt="" loading="lazy">':'<span class="artist-placeholder">♫</span>';
+        const details=[item.disambiguation,item.type,item.area,item.begin?(item.end?item.begin+"–"+item.end:"since "+item.begin):""].filter(Boolean);
+        const listeners=item.lastfm?.listeners?number(item.lastfm.listeners)+" Last.fm listeners":"MusicBrainz artist identity";
+        return '<button type="button" class="artist-result" data-artist-name="'+safe(item.name)+'" data-artist-mbid="'+safe(item.mbid)+'" data-artist-disambiguation="'+safe(item.disambiguation)+'" data-artist-type="'+safe(item.type)+'" data-artist-area="'+safe(item.area)+'" data-artist-begin="'+safe(item.begin)+'">'+art+'<span><strong>'+safe(item.name)+'</strong><small>'+safe(details.join(" · ")||listeners)+'</small><small>'+safe(listeners)+'</small></span></button>';
+      }).join("");
+      return;
+    }
+    if(!lastMatches.length){$("artistResults").innerHTML='<div class="empty">No artist match found. Try another spelling or search a related group.</div>';return;}
+    $("artistResults").innerHTML=lastMatches.slice(0,8).map(item=>{
       const image=imageUrl(item),name=item.name||term,mbid=item.mbid||"";
       const art=image?'<img src="'+safe(image)+'" alt="" loading="lazy">':'<span class="artist-placeholder">♫</span>';
-      return '<button type="button" class="artist-result" data-artist-name="'+safe(name)+'" data-artist-mbid="'+safe(mbid)+'">'+art+'<span><strong>'+safe(name)+'</strong><small>'+number(item.listeners)+' Last.fm listeners</small></span></button>';
+      return '<button type="button" class="artist-result" data-artist-name="'+safe(name)+'" data-artist-mbid="'+safe(mbid)+'">'+art+'<span><strong>'+safe(name)+'</strong><small>'+number(item.listeners)+' Last.fm listeners · identity details unavailable</small></span></button>';
     }).join("");
-  }catch(error){$("artistResults").innerHTML='<div class="empty">'+safe(error.message)+' The existing Last.fm connection may need its API secret checked in Supabase.</div>';}
+  }catch(error){$("artistResults").innerHTML='<div class="empty">'+safe(error.message)+' Try the artist search again in a moment.</div>';}
 }
 function renderArtistProfileButtons(){
   document.querySelectorAll("[data-save-artist-album]").forEach(button=>{
@@ -299,9 +386,9 @@ async function loadDiscography(name,mbid,generation){
     if(generation===state.artistGeneration)$("albumCount").textContent="Not indexed";
   }
 }
-async function loadArtist(name,mbid=""){
+async function loadArtist(name,mbid="",identity={}){
   const generation=++state.artistGeneration;
-  state.currentArtist={name,albums:[],tracks:[]};
+  state.currentArtist={name,mbid,identity,albums:[],tracks:[]};
   $("artistProfile").hidden=false;
   $("artistResults").innerHTML="";
   $("artistName").textContent=name;
@@ -315,11 +402,12 @@ async function loadArtist(name,mbid=""){
   $("similarArtists").innerHTML="";
   loadDiscography(name,mbid,generation);
   try{
+    const artistParams={artist:name,...(mbid?{mbid}:{})};
     const [infoData,albumData,trackData,similarData]=await Promise.all([
-      lastfm("artist.getInfo",{artist:name}),
-      lastfm("artist.getTopAlbums",{artist:name}),
-      lastfm("artist.getTopTracks",{artist:name}),
-      lastfm("artist.getSimilar",{artist:name})
+      lastfm("artist.getInfo",artistParams),
+      lastfm("artist.getTopAlbums",artistParams),
+      lastfm("artist.getTopTracks",artistParams),
+      lastfm("artist.getSimilar",artistParams)
     ]);
     if(generation!==state.artistGeneration)return;
     const info=infoData.artist||{},stats=info.stats||{},bio=stripHTML(info.bio?.summary||info.bio?.content||"");
@@ -329,10 +417,11 @@ async function loadArtist(name,mbid=""){
     state.currentArtist.albums=asArray(albumData.topalbums?.album);
     state.currentArtist.tracks=asArray(trackData.toptracks?.track);
     $("artistName").textContent=realName;
-    $("artistStats").textContent=[info.listeners?number(info.listeners)+" Last.fm listeners":"",info.streamable?"Artist profile":"Artist catalog"].filter(Boolean).join(" · ");
+    const identityText=[identity.disambiguation,identity.type,identity.area,identity.begin?(identity.end?identity.begin+"–"+identity.end:"since "+identity.begin):""].filter(Boolean).join(" · ");
+    $("artistStats").textContent=[identityText,info.listeners?number(info.listeners)+" Last.fm listeners":"",info.streamable?"Artist profile":"Artist catalog"].filter(Boolean).join(" · ");
     $("artistListeners").textContent=number(info.listeners||stats.listeners);
     $("artistPlays").textContent=number(info.playcount||stats.playcount);
-    $("artistBio").textContent=bio||"No biography was returned for this artist. Explore the albums and tracks below.";
+    $("artistBio").textContent=[identity.disambiguation?"Selected identity: "+identity.disambiguation:"",identity.area?"Associated area: "+identity.area:"",bio].filter(Boolean).join(" · ")||"No biography was returned for this artist. Explore the albums and tracks below.";
     const artistImage=imageUrl(info);
     if(artistImage)$("artistAvatar").innerHTML='<img src="'+safe(artistImage)+'" alt="'+safe(realName)+'">';
     const albums=state.currentArtist.albums;
@@ -345,7 +434,7 @@ async function loadArtist(name,mbid=""){
     const tracks=state.currentArtist.tracks;
     $("artistTracks").innerHTML=tracks.length?tracks.slice(0,6).map((track,index)=>{
       const trackObj={name:track.name||"Track",artist:track.artist?.name||realName},k=trackKey(trackObj),isSaved=saved(k);
-      return '<article class="track-card"><div class="track-top"><span class="track-icon">♫</span><span class="rank">TRACK '+(index+1)+'</span></div><h3>'+safe(trackObj.name)+'</h3><p class="muted">'+safe(trackObj.artist)+'</p><div class="actions"><a class="mini" target="_blank" rel="noopener noreferrer" href="'+openLinkSearch("spotify",trackObj.name,trackObj.artist)+'">Spotify ↗</a><a class="mini" target="_blank" rel="noopener noreferrer" href="'+safe(lyricsSearchLink(trackObj.name,trackObj.artist))+'">Lyrics ↗</a><button class="mini '+(isSaved?"saved":"")+'" data-save-artist-track="'+index+'">'+(isSaved?"♥ Saved":"♡ Save")+'</button></div></article>';
+      return '<article class="track-card"><div class="track-top"><span class="track-icon">♫</span><span class="rank">TRACK '+(index+1)+'</span></div><h3>'+safe(trackObj.name)+'</h3><p class="muted">'+safe(trackObj.artist)+'</p><div class="actions"><button class="mini preview-lookup" type="button" data-preview-artist-track="'+index+'">▶ Find preview</button><a class="mini" target="_blank" rel="noopener noreferrer" href="'+safe(openLinkSearch("spotify",trackObj.name,trackObj.artist))+'">Spotify ↗</a><a class="mini" target="_blank" rel="noopener noreferrer" href="'+safe(lyricsSearchLink(trackObj.name,trackObj.artist))+'">Lyrics ↗</a><button class="mini '+(isSaved?"saved":"")+'" data-save-artist-track="'+index+'">'+(isSaved?"♥ Saved":"♡ Save")+'</button></div><div class="preview-slot" id="artist-preview-'+index+'"></div></article>';
     }).join(""):'<div class="empty">No top tracks were returned for this artist.</div>';
     const similar=asArray(similarData.similarartists?.artist).slice(0,10);
     $("similarArtists").innerHTML=similar.map(item=>'<button type="button" class="similar-chip" data-similar-artist="'+safe(item.name)+'">'+safe(item.name)+'</button>').join("")||'<span class="muted">No related artists listed.</span>';
@@ -517,6 +606,12 @@ function bind(){
   document.querySelectorAll("[data-trend]").forEach(button=>button.addEventListener("click",()=>loadTrending(button.dataset.trend)));
   document.querySelectorAll("[data-atlas-action]").forEach(button=>button.addEventListener("click",()=>act(button.dataset.atlasAction)));
   $("trendingGrid").addEventListener("click",event=>{
+    const preview=event.target.closest("[data-preview-track]");
+    if(preview){
+      const index=Number(preview.dataset.previewTrack),track=state.tracks[index];
+      if(track)attachApplePreview($("trend-preview-"+index),preview,track.name,track.artist);
+      return;
+    }
     const button=event.target.closest("[data-save-track]");if(!button)return;
     const track=state.tracks[Number(button.dataset.saveTrack)];if(!track)return;
     addSaved({key:trackKey(track),title:track.name,subtitle:track.artist,type:"track",url:openLinkSearch("spotify",track.name,track.artist)});
@@ -538,7 +633,13 @@ function bind(){
   });
   $("artistResults").addEventListener("click",event=>{
     const button=event.target.closest("[data-artist-name]");if(!button)return;
-    loadArtist(button.dataset.artistName,button.dataset.artistMbid||"");
+    const identity={
+      disambiguation:button.dataset.artistDisambiguation||"",
+      type:button.dataset.artistType||"",
+      area:button.dataset.artistArea||"",
+      begin:button.dataset.artistBegin||""
+    };
+    loadArtist(button.dataset.artistName,button.dataset.artistMbid||"",identity);
   });
   $("closeArtistProfile").addEventListener("click",()=>{$("artistProfile").hidden=true;});
   $("artistAlbums").addEventListener("click",event=>{
@@ -548,11 +649,25 @@ function bind(){
     addSaved({key:k,title:album.name||"Album",subtitle:name+" · Album",type:"album",url:album.url||openLinkSearch("spotify",album.name,name)});
   });
   $("artistTracks").addEventListener("click",event=>{
+    const preview=event.target.closest("[data-preview-artist-track]");
+    if(preview){
+      const index=Number(preview.dataset.previewArtistTrack),track=state.currentArtist?.tracks?.[index];
+      if(track){
+        const obj={name:track.name||"Track",artist:track.artist?.name||state.currentArtist.name};
+        attachApplePreview($("artist-preview-"+index),preview,obj.name,obj.artist);
+      }
+      return;
+    }
     const button=event.target.closest("[data-save-artist-track]");if(!button)return;
     const track=state.currentArtist?.tracks?.[Number(button.dataset.saveArtistTrack)];if(!track)return;
     const obj={name:track.name||"Track",artist:track.artist?.name||state.currentArtist.name};
     addSaved({key:trackKey(obj),title:obj.name,subtitle:obj.artist,type:"track",url:openLinkSearch("spotify",obj.name,obj.artist)});
   });
+  document.addEventListener("play",event=>{
+    if(event.target?.classList?.contains("itunes-preview")){
+      document.querySelectorAll("audio.itunes-preview").forEach(audio=>{if(audio!==event.target)audio.pause();});
+    }
+  },true);
   $("similarArtists").addEventListener("click",event=>{
     const button=event.target.closest("[data-similar-artist]");if(!button)return;
     $("artistQuery").value=button.dataset.similarArtist;searchArtists(button.dataset.similarArtist);
