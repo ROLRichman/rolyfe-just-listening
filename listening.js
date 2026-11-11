@@ -132,7 +132,7 @@ function launchRadio(genre){
   const launch=radio("rolRadioLauncher"),panel=radio("rolRadioPanel");
   if(launch&&(!panel||!panel.classList.contains("open")))launch.click();
   const select=radio("rolRadioGenre");
-  const map={"hip-hop":"hip-hop","old-school-hip-hop":"old-school-hip-hop","r&b":"rnb","neo-soul":"neo-soul","reggae":"reggae","dancehall":"dancehall","smooth jazz":"smooth-jazz","caribbean":"caribbean","kompa-zouk":"kompa-zouk","afrobeats":"afrobeats"};
+  const map={"hip-hop":"hip-hop","old-school-hip-hop":"old-school-hip-hop","r&b":"rnb","neo-soul":"neo-soul","reggae":"reggae","dancehall":"dancehall","smooth jazz":"smooth-jazz","caribbean":"caribbean","kompa-zouk":"kompa-zouk","afrobeats":"afrobeats","country":"country"};
   const wanted=map[String(genre||"").toLowerCase()];
   if(select&&wanted&&select.value!==wanted){select.value=wanted;select.dispatchEvent(new Event("change",{bubbles:true}));}
 }
@@ -479,8 +479,8 @@ function getSelectedLanguageName(){
 }
 function runAtlasAction(action,value=""){
   const v=String(value||"").trim();
-  const trendAliases={"hip-hop":"hip-hop","hip hop":"hip-hop","rap":"hip-hop","old school":"old school hip hop","old-school":"old school hip hop","r&b":"r&b","rnb":"r&b","soul":"neo soul","neo-soul":"neo soul","reggae":"reggae","dancehall":"dancehall","afrobeats":"afrobeats","soca":"soca","kompa":"kompa","zouk":"kompa","jazz":"jazz","pop":"pop","rock":"rock","electronic":"electronic","latin":"latin"};
-  const radioAliases={"hip-hop":"hip-hop","hip hop":"hip-hop","rap":"hip-hop","old school":"old-school-hip-hop","old-school":"old-school-hip-hop","r&b":"rnb","rnb":"rnb","soul":"neo-soul","neo-soul":"neo-soul","reggae":"reggae","dancehall":"dancehall","afrobeats":"afrobeats","soca":"soca","kompa":"kompa-zouk","zouk":"kompa-zouk","jazz":"smooth-jazz"};
+  const trendAliases={"hip-hop":"hip-hop","hip hop":"hip-hop","rap":"hip-hop","old school":"old school hip hop","old-school":"old school hip hop","r&b":"r&b","rnb":"r&b","soul":"neo soul","neo-soul":"neo soul","reggae":"reggae","dancehall":"dancehall","afrobeats":"afrobeats","country":"country","soca":"soca","kompa":"kompa","zouk":"kompa","jazz":"jazz","pop":"pop","rock":"rock","electronic":"electronic","latin":"latin"};
+  const radioAliases={"hip-hop":"hip-hop","hip hop":"hip-hop","rap":"hip-hop","old school":"old-school-hip-hop","old-school":"old-school-hip-hop","r&b":"rnb","rnb":"rnb","soul":"neo-soul","neo-soul":"neo-soul","reggae":"reggae","dancehall":"dancehall","afrobeats":"afrobeats","country":"country","soca":"soca","kompa":"kompa-zouk","zouk":"kompa-zouk","jazz":"smooth-jazz"};
   if(action==="next_station"){
     if(!radio("rolRadioPanel")?.classList.contains("open"))launchRadio();
     radio("rolRadioNext")?.click();
@@ -492,7 +492,7 @@ function runAtlasAction(action,value=""){
     if(tag){loadTrending(tag);$("discover").scrollIntoView({behavior:"smooth"});}
   }else if(action==="set_trend"){
     const tag=trendAliases[v.toLowerCase()]||v.toLowerCase();
-    const allowed=["hip-hop","old school hip hop","r&b","neo soul","reggae","dancehall","afrobeats","soca","kompa","jazz","pop","rock","electronic","latin"];
+    const allowed=["hip-hop","old school hip hop","r&b","neo soul","reggae","dancehall","afrobeats","country","soca","kompa","jazz","pop","rock","electronic","latin"];
     loadTrending(allowed.includes(tag)?tag:"all");
     $("discover").scrollIntoView({behavior:"smooth"});
   }else if(action==="show_trending"||action==="surprise"){
