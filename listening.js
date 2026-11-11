@@ -1,13 +1,15 @@
 (()=>{
 "use strict";
 const LASTFM_API="https://nzduinxmsmmdbonefifi.supabase.co/functions/v1/entertainment-lastfm";
+const ATLAS_API="https://nzduinxmsmmdbonefifi.supabase.co/functions/v1/rolyfe-atlas";
+const TRENDING_PAGE_SIZE=24;
 const MB_API="https://nzduinxmsmmdbonefifi.supabase.co/functions/v1/entertainment-musicbrainz";
 const SAVED_KEY="rolyfeJustListening.saved.v1";
 const AI_KEY="rolyfeJustListening.atlasEnabled.v1";
 const $=id=>document.getElementById(id);
 const state={
-  trend:"all",tracks:[],saved:readSaved(),artistGeneration:0,
-  aiEnabled:readAIEnabled(),recognition:null,lastSpeech:"",
+  trend:"all",tracks:[],trackPage:1,trackPages:1,trackLoading:false,saved:readSaved(),artistGeneration:0,
+  aiEnabled:readAIEnabled(),recognition:null,lastSpeech:"",atlasHistory:[],atlasBusy:false,
   preferredVoice:null,currentArtist:null,voiceVolume:65,voiceLanguage:"en-US",artistPickPage:0
 };
 const ARTIST_COLLECTIONS={
@@ -79,8 +81,8 @@ function say(text){
     const utterance=new SpeechSynthesisUtterance(text);
     utterance.lang=state.preferredVoice?.lang||"en-US";
     if(state.preferredVoice)utterance.voice=state.preferredVoice;
-    utterance.rate=0.91;
-    utterance.pitch=0.96;
+    utterance.rate=0.96;
+    utterance.pitch=1.0;
     utterance.volume=Math.max(0,Math.min(1,state.voiceVolume/100));
     utterance.onstart=()=>setVoiceStatus("Atlas is speaking…");
     utterance.onend=()=>setVoiceStatus("Ready when you are");
@@ -176,26 +178,52 @@ function trackKey(track){return "track:"+String(track.name||"").toLowerCase()+"|
 function renderTracks(){
   $("trendingGrid").innerHTML=state.tracks.length?state.tracks.map((track,index)=>{
     const key=trackKey(track),isSaved=saved(key);
-    return '<article class="track-card"><div class="track-top"><span class="track-icon">♫</span><span class="rank">TRENDING '+(index+1)+'</span></div><h3>'+safe(track.name)+'</h3><p class="muted">'+safe(track.artist||"Artist")+'</p><div class="actions"><a class="mini" target="_blank" rel="noopener" href="'+openLinkSearch("spotify",track.name,track.artist)+'">Spotify ↗</a><a class="mini" target="_blank" rel="noopener noreferrer" href="'+openLinkSearch("youtube",track.name,track.artist)+'">YouTube Music ↗</a><a class="mini" target="_blank" rel="noopener noreferrer" href="'+safe(lyricsSearchLink(track.name,track.artist))+'">Lyrics ↗</a><button class="mini '+(isSaved?"saved":"")+'" type="button" data-save-track="'+index+'">'+(isSaved?"♥ Saved":"♡ Save")+'</button></div></article>';
-  }).join(""):'<div class="empty">No tracks loaded. Try refresh or another category.</div>';
+    return '<article class="track-card"><div class="track-top"><span class="track-icon">♫</span><span class="rank">#'+(index+1)+'</span></div><h3>'+safe(track.name)+'</h3><p class="muted">'+safe(track.artist||"Artist")+'</p><div class="actions"><a class="mini" target="_blank" rel="noopener noreferrer" href="'+safe(openLinkSearch("spotify",track.name,track.artist))+'">Spotify ↗</a><a class="mini" target="_blank" rel="noopener noreferrer" href="'+safe(openLinkSearch("youtube",track.name,track.artist))+'">YouTube Music ↗</a><a class="mini" target="_blank" rel="noopener noreferrer" href="'+safe(lyricsSearchLink(track.name,track.artist))+'">Lyrics ↗</a><button class="mini '+(isSaved?"saved":"")+'" type="button" data-save-track="'+index+'">'+(isSaved?"♥ Saved":"♡ Save")+'</button></div></article>';
+  }).join(""):'<div class="empty">No tracks loaded. Try Refresh or choose another genre.</div>';
+  const more=$("loadMoreTracks");
+  if(more){
+    more.hidden=!state.tracks.length||state.trackPage>=state.trackPages;
+    more.disabled=state.trackLoading;
+    more.textContent=state.trackLoading?"Loading more…":"Load 24 more tracks ↓";
+  }
 }
 async function lastfm(method,extra={}){
-  const params=new URLSearchParams({method,limit:"12",...extra});
+  const params=new URLSearchParams({method,limit:String(TRENDING_PAGE_SIZE),...extra});
   const response=await fetch(LASTFM_API+"?"+params.toString(),{headers:{Accept:"application/json"}});
   const body=await response.json();
   if(!response.ok||body.error)throw new Error(body.error||"Last.fm discovery is temporarily unavailable.");
   return body.data||{};
 }
-async function loadTrending(tag=state.trend){
+async function loadTrending(tag=state.trend,append=false){
+  if(state.trackLoading)return;
   state.trend=tag;
+  if(!append){state.trackPage=1;state.trackPages=1;state.tracks=[];}
+  else state.trackPage=Math.min(10,state.trackPage+1);
+  const page=state.trackPage;
   document.querySelectorAll("[data-trend]").forEach(button=>button.classList.toggle("selected",button.dataset.trend===tag));
-  $("trendingGrid").innerHTML='<div class="empty">Finding your listening picks…</div>';
+  state.trackLoading=true;
+  if(!append)$("trendingGrid").innerHTML='<div class="empty">Finding your listening picks…</div>';
+  if($("loadMoreTracks")){$("loadMoreTracks").disabled=true;$("loadMoreTracks").textContent="Loading more…";}
   try{
-    const payload=tag==="all"?await lastfm("chart.getTopTracks"):await lastfm("tag.getTopTracks",{tag});
-    const list=payload.tracks?.track||payload.toptracks?.track||[];
-    state.tracks=asArray(list).slice(0,12).map(item=>({name:item.name,artist:typeof item.artist==="string"?item.artist:item.artist?.name||""})).filter(item=>item.name);
+    const query={limit:String(TRENDING_PAGE_SIZE),page:String(page)};
+    const payload=tag==="all"?await lastfm("chart.getTopTracks",query):await lastfm("tag.getTopTracks",{...query,tag});
+    const root=payload.tracks||payload.toptracks||{};
+    const list=asArray(root.track).map(item=>({name:item.name,artist:typeof item.artist==="string"?item.artist:item.artist?.name||""})).filter(item=>item.name);
+    const seen=new Set(state.tracks.map(track=>trackKey(track)));
+    const fresh=list.filter(track=>!seen.has(trackKey(track)));
+    state.tracks=append?[...state.tracks,...fresh]:fresh;
+    const totalPages=Number(root["@attr"]?.totalPages||root["@attr"]?.totalpages||0);
+    state.trackPages=totalPages?Math.min(10,totalPages):(list.length>=TRENDING_PAGE_SIZE?10:page);
+    if(append&&!fresh.length)state.trackPages=page;
     renderTracks();
-  }catch(error){$("trendingGrid").innerHTML='<div class="empty">'+safe(error.message)+' Open Live Radio to keep listening.</div>';}
+  }catch(error){
+    if(!append)state.tracks=[];
+    renderTracks();
+    $("trendingGrid").insertAdjacentHTML("beforeend",'<div class="empty">'+safe(error.message)+' Try Refresh or choose another chart.</div>');
+  }finally{
+    state.trackLoading=false;
+    renderTracks();
+  }
 }
 async function searchPodcasts(term){
   if(!String(term||"").trim())return;
@@ -331,6 +359,111 @@ async function loadArtist(name,mbid=""){
     $("artistTracks").innerHTML="";
   }
 }
+
+function appendAtlasChat(role,text){
+  const log=$("atlasChatLog");
+  if(!log)return;
+  const row=document.createElement("div");
+  row.className="atlas-chat-message "+(role==="user"?"user":"assistant");
+  const label=document.createElement("small");
+  label.textContent=role==="user"?"YOU":"ATLAS";
+  const body=document.createElement("p");
+  body.textContent=String(text||"");
+  row.append(label,body);
+  log.appendChild(row);
+  while(log.children.length>12)log.firstElementChild.remove();
+  log.scrollTop=log.scrollHeight;
+}
+function getSelectedLanguageName(){
+  try{
+    const code=state.voiceLanguage||"en-US";
+    return (new Intl.DisplayNames(["en"],{type:"language"}).of(code.split("-")[0])||code)+" ("+code+")";
+  }catch(_){return state.voiceLanguage||"English";}
+}
+function runAtlasAction(action,value=""){
+  const v=String(value||"").trim();
+  const trendAliases={"hip-hop":"hip-hop","hip hop":"hip-hop","rap":"hip-hop","old school":"old school hip hop","old-school":"old school hip hop","r&b":"r&b","rnb":"r&b","soul":"neo soul","neo-soul":"neo soul","reggae":"reggae","dancehall":"dancehall","afrobeats":"afrobeats","soca":"soca","kompa":"kompa","zouk":"kompa","jazz":"jazz","pop":"pop","rock":"rock","electronic":"electronic","latin":"latin"};
+  const radioAliases={"hip-hop":"hip-hop","hip hop":"hip-hop","rap":"hip-hop","old school":"old-school-hip-hop","old-school":"old-school-hip-hop","r&b":"rnb","rnb":"rnb","soul":"neo-soul","neo-soul":"neo-soul","reggae":"reggae","dancehall":"dancehall","afrobeats":"afrobeats","soca":"soca","kompa":"kompa-zouk","zouk":"kompa-zouk","jazz":"smooth-jazz"};
+  if(action==="next_station"){
+    if(!radio("rolRadioPanel")?.classList.contains("open"))launchRadio();
+    radio("rolRadioNext")?.click();
+  }else if(action==="open_radio"){
+    launchRadio(radioAliases[v.toLowerCase()]||"");
+  }else if(action==="set_genre"){
+    launchRadio(radioAliases[v.toLowerCase()]||"");
+    const tag=trendAliases[v.toLowerCase()];
+    if(tag){loadTrending(tag);$("discover").scrollIntoView({behavior:"smooth"});}
+  }else if(action==="set_trend"){
+    const tag=trendAliases[v.toLowerCase()]||v.toLowerCase();
+    const allowed=["hip-hop","old school hip hop","r&b","neo soul","reggae","dancehall","afrobeats","soca","kompa","jazz","pop","rock","electronic","latin"];
+    loadTrending(allowed.includes(tag)?tag:"all");
+    $("discover").scrollIntoView({behavior:"smooth"});
+  }else if(action==="show_trending"||action==="surprise"){
+    const tag=action==="surprise"?"all":(trendAliases[v.toLowerCase()]||"all");
+    loadTrending(tag);
+    $("discover").scrollIntoView({behavior:"smooth"});
+  }else if(action==="search_artist"){
+    if(v){$("artistQuery").value=v;searchArtists(v);$("artist-vault").scrollIntoView({behavior:"smooth"});}
+    else{$("artist-vault").scrollIntoView({behavior:"smooth"});$("artistQuery").focus();}
+  }else if(action==="search_podcast"){
+    $("podcasts").scrollIntoView({behavior:"smooth"});
+    if(v){$("podcastQuery").value=v;searchPodcasts(v);}else $("podcastQuery").focus();
+  }else if(action==="open_saved"){
+    $("my-list").scrollIntoView({behavior:"smooth"});
+  }else if(action==="open_lyricists"){
+    const category=$("artistCategory");
+    if(category){category.value=["women","rnb_songwriters","reggae_dancehall","producers"].includes(v)?v:"rap_lyricists";state.artistPickPage=0;initArtistPicks();}
+    $("artist-vault").scrollIntoView({behavior:"smooth"});
+  }else if(action==="save_station"){
+    if(!radio("rolRadioPanel")?.classList.contains("open"))launchRadio();
+    const saveButton=radio("rolRadioSaveStation");
+    if(saveButton&&!saveButton.disabled){saveButton.click();return true;}
+    return false;
+  }
+  return true;
+}
+async function sendAtlasMessage(raw){
+  const message=String(raw||"").trim();
+  if(!message||state.atlasBusy||!state.aiEnabled)return;
+  state.atlasHistory.push({role:"user",content:message});
+  state.atlasHistory=state.atlasHistory.slice(-8);
+  appendAtlasChat("user",message);
+  $("atlasChatInput").value="";
+  state.atlasBusy=true;
+  $("atlasSend").disabled=true;
+  setVoiceStatus("Atlas is thinking…");
+  try{
+    const response=await fetch(ATLAS_API,{
+      method:"POST",
+      headers:{"Content-Type":"application/json","Accept":"application/json"},
+      body:JSON.stringify({messages:state.atlasHistory,language:getSelectedLanguageName()})
+    });
+    const body=await response.json().catch(()=>({}));
+    if(response.status===503&&body.code==="OPENAI_API_KEY_MISSING"){
+      throw new Error("Atlas's conversation engine is built, but its OpenAI key has not been added to Supabase yet. Add OPENAI_API_KEY under Edge Functions → Secrets, then try again.");
+    }
+    if(!response.ok)throw new Error(body.error||"Atlas couldn't reach the conversation service. Please try again.");
+    let reply=String(body.reply||"I’m here. Tell me what you would like to listen to.");
+    const action=String(body.action||"none");
+    const value=String(body.value||"");
+    const executed=runAtlasAction(action,value);
+    if(action==="save_station"&&!executed)reply="Choose or play a radio station first, and then I'll add it to your Saved Stations shelf.";
+    state.atlasHistory.push({role:"assistant",content:reply});
+    state.atlasHistory=state.atlasHistory.slice(-8);
+    appendAtlasChat("assistant",reply);
+    setAtlasMessage(reply,true);
+    setVoiceStatus(action==="none"?"Ready when you are":"Done · "+action.replace(/_/g," "));
+  }catch(error){
+    const friendly=error.message||"Atlas is temporarily unavailable.";
+    appendAtlasChat("assistant",friendly);
+    setAtlasMessage(friendly,true);
+    setVoiceStatus("Atlas needs its AI connection checked");
+  }finally{
+    state.atlasBusy=false;
+    $("atlasSend").disabled=false;
+    $("atlasChatInput").focus({preventScroll:true});
+  }
+}
 function beginVoiceInput(){
   if(!state.aiEnabled){setVoiceStatus("Turn Atlas on to use voice commands.");return;}
   const Recognition=window.SpeechRecognition||window.webkitSpeechRecognition;
@@ -341,15 +474,9 @@ function beginVoiceInput(){
     recognition.lang=state.voiceLanguage||"en-US";recognition.interimResults=false;recognition.maxAlternatives=1;
     setVoiceStatus("Listening…");
     recognition.onresult=event=>{
-      const words=String(event.results?.[0]?.[0]?.transcript||"").toLowerCase();
-      setVoiceStatus(words?"I heard: "+words:"I didn't catch that");
-      if(/next|another station|change station/.test(words))act("next");
-      else if(/trend|popular|top chart/.test(words))act("trending");
-      else if(/pick|choose|track|song|play something/.test(words))act("pick");
-      else if(/podcast|show|interview/.test(words)){$("podcasts").scrollIntoView({behavior:"smooth"});setAtlasMessage("Let's find a podcast. Search by topic, show name or host.",true);}
-      else if(/artist|album|nas|kendrick|rapper|hip.?hop/.test(words)){$("artist-vault").scrollIntoView({behavior:"smooth"});$("artistQuery").focus();setAtlasMessage("Let's open the Hip-Hop Vault. Search an artist or choose one of the featured names.",true);}
-      else if(/radio|jazz|reggae|r.?b/.test(words)){launchRadio(words);setAtlasMessage("Live radio is opening. Choose a station and tap Play.",true);}
-      else setAtlasMessage("I heard you. Try saying next station, trending, pick a track, find an artist, podcast, or radio.",true);
+      const words=String(event.results?.[0]?.[0]?.transcript||"").trim();
+      if(words){setVoiceStatus("Heard: "+words);sendAtlasMessage(words);}
+      else setVoiceStatus("I didn't catch that. Try again.");
     };
     recognition.onerror=event=>setVoiceStatus(event.error==="not-allowed"?"Microphone permission was not granted.":"Voice input stopped.");
     recognition.onend=()=>{state.recognition=null;if($("voiceStatus")?.textContent==="Listening…")setVoiceStatus("Ready when you are");};
@@ -367,6 +494,7 @@ function bind(){
   $("atlasPower").addEventListener("click",()=>setAIEnabled(!state.aiEnabled));
   $("atlasSpeak").addEventListener("click",()=>say(state.lastSpeech||"Hello there. Welcome to RO’Lyfe Just Listening. I'm Atlas, your listening guide. What would you like to discover today?"));
   $("atlasTalk").addEventListener("click",beginVoiceInput);
+  $("atlasChatForm").addEventListener("submit",event=>{event.preventDefault();sendAtlasMessage($("atlasChatInput").value);});
   $("atlasLanguage").addEventListener("change",()=>{
     state.voiceLanguage=$("atlasLanguage").value;
     readVoices();
@@ -385,6 +513,7 @@ function bind(){
   });
   $("startRadio").addEventListener("click",()=>{launchRadio();setAtlasMessage("Live radio is ready. Choose a station and press Play when you're ready.",true);});
   $("refreshTrending").addEventListener("click",()=>loadTrending(state.trend));
+  $("loadMoreTracks").addEventListener("click",()=>loadTrending(state.trend,true));
   document.querySelectorAll("[data-trend]").forEach(button=>button.addEventListener("click",()=>loadTrending(button.dataset.trend)));
   document.querySelectorAll("[data-atlas-action]").forEach(button=>button.addEventListener("click",()=>act(button.dataset.atlasAction)));
   $("trendingGrid").addEventListener("click",event=>{
