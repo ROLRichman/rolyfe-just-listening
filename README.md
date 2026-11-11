@@ -119,3 +119,10 @@ Before calling the release complete, verify:
 - The radio player depends on a separately hosted shared script; both deployments must remain available.
 
 Recommended next improvements are a true unified mini-player state, podcast episode playback through authorized feeds, optional account-backed listening-list sync, richer R&B/Caribbean artist discovery, and a server-side conversational Atlas integration.
+
+
+## Hip-Hop Vault artist collections and Atlas voice settings
+
+The Hip-Hop Vault groups artist shortcuts into curated collections, with a maximum of 15 quick-pick artists displayed at a time. Visitors can still search any artist directly. The collections include foundational pioneers, East Coast lyricists, groups, West Coast icons, current artists and a dedicated Women Who Move Hip-Hop collection. The requested sequence places Biggie and 2Pac among the first icons, then KRS-One, Slick Rick and Kool G Rap before Locksmith appears in the lyricist collection.
+
+Atlas now exposes the speech voices installed by the visitor's browser/device through a language dropdown, plus a persistent speaking-volume slider. The selected language is also used for browser speech recognition where supported. This changes the voice language and microphone recognition locale; it does not yet provide automatic translation or open-ended multilingual AI responses. Voice availability and quality depend on the operating system/browser and installed speech packs. Full multilingual conversation requires a protected server-side AI integration.
