@@ -170,3 +170,11 @@ The Atlas conversation Edge Function is deployed as `rolyfe-atlas` and uses the 
 - Value: the OpenAI API key created in the OpenAI Platform
 
 Save it in Supabase only. Do not paste it into the browser, GitHub, this README, or a chat message. Supabase makes newly saved Edge Function secrets available without a redeploy. If it is not configured, the page displays a setup notice rather than claiming Atlas is using an AI model.
+
+
+## Playable discovery previews and artist disambiguation
+
+- Trending-chart tracks and artist-profile tracks now have a **Find preview** action. It looks up a matching track in Apple's iTunes Search catalog and, where Apple provides a preview asset, exposes its 30-second promotional audio player with the Apple Music track link beside it. This is a preview sample, not a full-track stream. Full-track playback remains available through the linked listening services.
+- Apple promotional preview audio/artwork are displayed in proximity to the Apple Music store link and are used only to promote the corresponding store content, consistent with Apple's Search API guidance.
+- Artist search now uses MusicBrainz artist identities and displays the disambiguation comment, type, area and date range before opening a profile. This helps distinguish same-name artists such as Eve (the Philadelphia rapper) from other performers named Eve.
+- When an artist identity is selected, its MusicBrainz ID is also sent to Last.fm artist profile, top album, top track and similar-artist lookups, where supported, instead of relying on the name alone.
