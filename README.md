@@ -178,3 +178,11 @@ Save it in Supabase only. Do not paste it into the browser, GitHub, this README,
 - Apple promotional preview audio/artwork are displayed in proximity to the Apple Music store link and are used only to promote the corresponding store content, consistent with Apple's Search API guidance.
 - Artist search now uses MusicBrainz artist identities and displays the disambiguation comment, type, area and date range before opening a profile. This helps distinguish same-name artists such as Eve (the Philadelphia rapper) from other performers named Eve.
 - When an artist identity is selected, its MusicBrainz ID is also sent to Last.fm artist profile, top album, top track and similar-artist lookups, where supported, instead of relying on the name alone.
+
+
+## Playback transport controls
+
+- The Pick Your Moment area now includes Previous, Play/Pause (or Resume), and Next transport controls wired to the same floating live-radio player.
+- The floating RO’Lyfe Music Stations player also includes Previous beside Play, Next and Mute.
+- Previous wraps from the first listed station to the last station. The current station index is restored when resuming the remembered station where it is still present in the loaded station list.
+- The floating Music Stations panel has more vertical room (up to 82vh/680px on larger displays and 78dvh on mobile) while retaining internal scrolling and safe viewport limits.
