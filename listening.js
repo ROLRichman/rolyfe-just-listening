@@ -17,7 +17,11 @@ const ARTIST_COLLECTIONS={
   groups:["The Roots","The Pharcyde","Das EFX","Group Home","Lost Boyz","Gang Starr","Brand Nubian","Boot Camp Clik","A Tribe Called Quest","De La Soul","Black Star","The Fugees","OutKast","Cocoa Brovaz","EPMD"],
   west:["Dr. Dre","Eminem","Snoop Dogg","Ice Cube","Kendrick Lamar","D Smoke","Dizzy Wright","Too Short","E-40","The Lady of Rage","Ras Kass","Xzibit","Warren G","Kurupt","The Game"],
   modern:["Locksmith","RJ Payne","D Smoke","Dizzy Wright","Papoose","Dave East","Russ","Joey Bada$","JID","Kendrick Lamar","J. Cole","Black Thought","Sa-Roc","Little Simz","Rapsody"],
-  women:["Eve","Sa-Roc","MC Lyte","Roxanne Shanté","Queen Latifah","Lauryn Hill","Rah Digga","Jean Grae","Rapsody","Lady of Rage","Remy Ma","Foxy Brown","Bahamadia","Monie Love","Ladybug Mecca","Noname","Che Noir","Snow Tha Product","Little Simz","Tierra Whack","Doechii","Megan Thee Stallion","Missy Elliott","Nicki Minaj","Erykah Badu"]
+  women:["Eve","Sa-Roc","MC Lyte","Roxanne Shanté","Queen Latifah","Lauryn Hill","Rah Digga","Jean Grae","Rapsody","Lady of Rage","Remy Ma","Foxy Brown","Bahamadia","Monie Love","Ladybug Mecca","Noname","Che Noir","Snow Tha Product","Little Simz","Tierra Whack","Doechii","Megan Thee Stallion","Missy Elliott","Nicki Minaj"],
+  rap_lyricists:["KRS-One","Slick Rick","Kool G Rap","Rakim","Nas","The Notorious B.I.G.","2Pac","AZ","Big Daddy Kane","Black Thought","Andre 3000","Eminem","Lupe Fiasco","Papoose","Locksmith","RJ Payne","Jadakiss","Styles P","Pharoahe Monch","Royce da 5'9\"","R.A. the Rugged Man","Brother Ali","Masta Ace","Common","Mos Def"],
+  rnb_songwriters:["Stevie Wonder","Prince","Sade","D'Angelo","Erykah Badu","Jill Scott","Lauryn Hill","Maxwell","Alicia Keys","Mary J. Blige","Babyface","Smokey Robinson","Marvin Gaye","Curtis Mayfield","Raphael Saadiq","India.Arie","H.E.R.","Frank Ocean","The Weeknd","Miguel","Anderson .Paak","Brandy","Toni Braxton","Keri Hilson","Ne-Yo"],
+  reggae_dancehall:["Bob Marley","Peter Tosh","Burning Spear","Beres Hammond","Buju Banton","Damian Marley","Stephen Marley","Chronixx","Protoje","Koffee","Vybz Kartel","Bounty Killer","Beenie Man","Shabba Ranks","Capleton","Sizzla","Toots and the Maytals","Gregory Isaacs","Dennis Brown","Sean Paul","Tarrus Riley","Jah Cure","Mavado","Popcaan","Shenseea"],
+  producers:["DJ Premier","Marley Marl","Dr. Dre","Pete Rock","J Dilla","RZA","Q-Tip","Large Professor","Madlib","The Alchemist","Just Blaze","No I.D.","Pharrell Williams","Timbaland","Kanye West","9th Wonder","DJ Khaled","Swizz Beatz","Prince Paul","Easy Mo Bee"]
 };
 const STARTER_ARTISTS=Object.values(ARTIST_COLLECTIONS).flat();
 function readSaved(){try{const x=JSON.parse(localStorage.getItem(SAVED_KEY)||"[]");return Array.isArray(x)?x:[]}catch(_){return[]}}
@@ -34,6 +38,9 @@ function imageUrl(item){
 function openLinkSearch(type,name,artist){
   const q=encodeURIComponent([name,artist].filter(Boolean).join(" "));
   return type==="youtube"?"https://music.youtube.com/search?q="+q:"https://open.spotify.com/search/"+q;
+}
+function lyricsSearchLink(name,artist){
+  return "https://genius.com/search?q="+encodeURIComponent([name,artist].filter(Boolean).join(" "));
 }
 function readVoices(){
   if(!("speechSynthesis" in window))return;
@@ -123,7 +130,7 @@ function launchRadio(genre){
   const launch=radio("rolRadioLauncher"),panel=radio("rolRadioPanel");
   if(launch&&(!panel||!panel.classList.contains("open")))launch.click();
   const select=radio("rolRadioGenre");
-  const map={"hip-hop":"hip-hop","r&b":"rnb","reggae":"reggae","smooth jazz":"smooth-jazz","caribbean":"caribbean"};
+  const map={"hip-hop":"hip-hop","old-school-hip-hop":"old-school-hip-hop","r&b":"rnb","neo-soul":"neo-soul","reggae":"reggae","dancehall":"dancehall","smooth jazz":"smooth-jazz","caribbean":"caribbean","kompa-zouk":"kompa-zouk","afrobeats":"afrobeats"};
   const wanted=map[String(genre||"").toLowerCase()];
   if(select&&wanted&&select.value!==wanted){select.value=wanted;select.dispatchEvent(new Event("change",{bubbles:true}));}
 }
@@ -137,8 +144,9 @@ function act(action){
     loadTrending(state.trend);
     setAtlasMessage("Let's check the popular and trending shelf. You'll find artist and track discovery here, with links to authorized listening services.",true);
   }else if(action==="pick"){
-    $("pickModal").hidden=false;
-    setAtlasMessage("What sounds good today? Pick a genre, or choose surprise me and I'll bring up some discovery picks.",true);
+    const menu=$("moodMenu");
+    if(menu){menu.open=true;menu.scrollIntoView({behavior:"smooth",block:"center"});}
+    setAtlasMessage("What sounds good today? Choose a genre, browse podcasts, or let me surprise you.",true);
   }
 }
 function saved(key){return state.saved.some(item=>item.key===key);}
@@ -168,7 +176,7 @@ function trackKey(track){return "track:"+String(track.name||"").toLowerCase()+"|
 function renderTracks(){
   $("trendingGrid").innerHTML=state.tracks.length?state.tracks.map((track,index)=>{
     const key=trackKey(track),isSaved=saved(key);
-    return '<article class="track-card"><div class="track-top"><span class="track-icon">♫</span><span class="rank">TRENDING '+(index+1)+'</span></div><h3>'+safe(track.name)+'</h3><p class="muted">'+safe(track.artist||"Artist")+'</p><div class="actions"><a class="mini" target="_blank" rel="noopener" href="'+openLinkSearch("spotify",track.name,track.artist)+'">Spotify ↗</a><a class="mini" target="_blank" rel="noopener" href="'+openLinkSearch("youtube",track.name,track.artist)+'">YouTube Music ↗</a><button class="mini '+(isSaved?"saved":"")+'" type="button" data-save-track="'+index+'">'+(isSaved?"♥ Saved":"♡ Save")+'</button></div></article>';
+    return '<article class="track-card"><div class="track-top"><span class="track-icon">♫</span><span class="rank">TRENDING '+(index+1)+'</span></div><h3>'+safe(track.name)+'</h3><p class="muted">'+safe(track.artist||"Artist")+'</p><div class="actions"><a class="mini" target="_blank" rel="noopener" href="'+openLinkSearch("spotify",track.name,track.artist)+'">Spotify ↗</a><a class="mini" target="_blank" rel="noopener noreferrer" href="'+openLinkSearch("youtube",track.name,track.artist)+'">YouTube Music ↗</a><a class="mini" target="_blank" rel="noopener noreferrer" href="'+safe(lyricsSearchLink(track.name,track.artist))+'">Lyrics ↗</a><button class="mini '+(isSaved?"saved":"")+'" type="button" data-save-track="'+index+'">'+(isSaved?"♥ Saved":"♡ Save")+'</button></div></article>';
   }).join(""):'<div class="empty">No tracks loaded. Try refresh or another category.</div>';
 }
 async function lastfm(method,extra={}){
@@ -309,7 +317,7 @@ async function loadArtist(name,mbid=""){
     const tracks=state.currentArtist.tracks;
     $("artistTracks").innerHTML=tracks.length?tracks.slice(0,6).map((track,index)=>{
       const trackObj={name:track.name||"Track",artist:track.artist?.name||realName},k=trackKey(trackObj),isSaved=saved(k);
-      return '<article class="track-card"><div class="track-top"><span class="track-icon">♫</span><span class="rank">TRACK '+(index+1)+'</span></div><h3>'+safe(trackObj.name)+'</h3><p class="muted">'+safe(trackObj.artist)+'</p><div class="actions"><a class="mini" target="_blank" rel="noopener" href="'+openLinkSearch("spotify",trackObj.name,trackObj.artist)+'">Spotify ↗</a><button class="mini '+(isSaved?"saved":"")+'" data-save-artist-track="'+index+'">'+(isSaved?"♥ Saved":"♡ Save")+'</button></div></article>';
+      return '<article class="track-card"><div class="track-top"><span class="track-icon">♫</span><span class="rank">TRACK '+(index+1)+'</span></div><h3>'+safe(trackObj.name)+'</h3><p class="muted">'+safe(trackObj.artist)+'</p><div class="actions"><a class="mini" target="_blank" rel="noopener noreferrer" href="'+openLinkSearch("spotify",trackObj.name,trackObj.artist)+'">Spotify ↗</a><a class="mini" target="_blank" rel="noopener noreferrer" href="'+safe(lyricsSearchLink(trackObj.name,trackObj.artist))+'">Lyrics ↗</a><button class="mini '+(isSaved?"saved":"")+'" data-save-artist-track="'+index+'">'+(isSaved?"♥ Saved":"♡ Save")+'</button></div></article>';
     }).join(""):'<div class="empty">No top tracks were returned for this artist.</div>';
     const similar=asArray(similarData.similarartists?.artist).slice(0,10);
     $("similarArtists").innerHTML=similar.map(item=>'<button type="button" class="similar-chip" data-similar-artist="'+safe(item.name)+'">'+safe(item.name)+'</button>').join("")||'<span class="muted">No related artists listed.</span>';
@@ -420,13 +428,18 @@ function bind(){
     const button=event.target.closest("[data-similar-artist]");if(!button)return;
     $("artistQuery").value=button.dataset.similarArtist;searchArtists(button.dataset.similarArtist);
   });
-  $("closePick").addEventListener("click",()=>$("pickModal").hidden=true);
-  $("pickModal").addEventListener("click",event=>{if(event.target===$("pickModal"))$("pickModal").hidden=true;});
   document.querySelectorAll("[data-pick]").forEach(button=>button.addEventListener("click",()=>{
-    const genre=button.dataset.pick;$("pickModal").hidden=true;
+    const genre=button.dataset.pick;
+    $("moodMenu").open=false;
     if(genre==="podcasts"){$("podcasts").scrollIntoView({behavior:"smooth"});$("podcastQuery").focus();setAtlasMessage("Let's find a podcast for you.",true);}
     else if(genre==="surprise me"){loadTrending("all");$("discover").scrollIntoView({behavior:"smooth"});setAtlasMessage("Surprise. Here are popular tracks to explore.",true);}
-    else{loadTrending(genre);$("discover").scrollIntoView({behavior:"smooth"});launchRadio(genre);setAtlasMessage("I've set the discovery shelf to "+genre+". You can also choose a matching live radio station.",true);}
+    else{
+      const trendTags={"old-school-hip-hop":"old school hip hop","neo-soul":"neo soul","smooth jazz":"smooth jazz","kompa-zouk":"kompa","r&b":"r&b"};
+      loadTrending(trendTags[genre]||genre);
+      $("discover").scrollIntoView({behavior:"smooth"});
+      launchRadio(genre);
+      setAtlasMessage("I've set the discovery shelf to "+button.textContent+". You can also choose a matching live radio station.",true);
+    }
   }));
   $("dismissWelcome").addEventListener("click",()=>$("welcomeToast").hidden=true);
   $("backToTop").addEventListener("click",()=>window.scrollTo({top:0,behavior:"smooth"}));
@@ -436,7 +449,7 @@ function bind(){
   document.addEventListener("click",event=>{
     const menu=$("projectsMenu");if(menu?.open&&!menu.contains(event.target))closeProjectMenu();
   });
-  document.addEventListener("keydown",event=>{if(event.key==="Escape"){closeProjectMenu();closeAtlas();$("pickModal").hidden=true;}});
+  document.addEventListener("keydown",event=>{if(event.key==="Escape"){closeProjectMenu();closeAtlas();$("moodMenu").open=false;}});
 }
 function tuneRadioLabels(){
   const title=document.querySelector(".rol-radio-title");if(title)title.textContent="🎧 RO’Lyfe Live Radio";
