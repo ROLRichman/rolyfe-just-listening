@@ -743,7 +743,8 @@ function bind(){
   $("podcastSearchForm").addEventListener("submit",event=>{event.preventDefault();searchPodcasts($("podcastQuery").value);});
   document.querySelectorAll("[data-podcast-query]").forEach(button=>button.addEventListener("click",()=>{$("podcastQuery").value=button.dataset.podcastQuery;searchPodcasts(button.dataset.podcastQuery);}));
   $("podcastGrid").addEventListener("click",event=>{
-    const episodeButton=event.target.closest("[data-load-podcast]");if(episodeButton){loadPodcastEpisodes(episodeButton.dataset.loadPodcast,episodeButton);return;}\n    const button=event.target.closest("[data-save-pod]");if(!button)return;
+    const episodeButton=event.target.closest("[data-load-podcast]");if(episodeButton){loadPodcastEpisodes(episodeButton.dataset.loadPodcast,episodeButton);return;}
+    const button=event.target.closest("[data-save-pod]");if(!button)return;
     try{addSaved(JSON.parse(decodeURIComponent(button.dataset.savePod)));}catch(_){}
   });
   $("savedList").addEventListener("click",event=>{
