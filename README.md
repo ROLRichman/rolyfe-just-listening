@@ -201,3 +201,17 @@ The **Country Music** choice is also available in the Your Sound selector and Po
 
 
 The **Set as Default** button names the actual station (for example, “Set KLM FM as Default”), and the worldwide country menu includes each country's Radio Browser station count where available. The menu accepts country-code and ISO country catalogue response shapes.
+
+
+## Atlas reads live search and discovery context
+
+Atlas now receives a small, server-validated snapshot of the currently active page section with each chat or voice request. Depending on the active view, this includes:
+
+- **Artist Spotlight:** selected MusicBrainz identity details, Last.fm biography, listeners and plays, MusicBrainz indexed album/EP count and its note, popular albums, top tracks, and related artists.
+- **Artist search:** the visible artist matches, disambiguation, type, area, dates and Last.fm listener figures where returned.
+- **Popular & Trending:** active chart category, page information, and the loaded track/artist list.
+- **Podcast search:** visible show title, publisher, category and release date where supplied by the directory.
+
+The page has one-tap **Read this spotlight**, **Read artist matches**, **Read this chart**, and **Read podcast matches** controls. Atlas also uses the active context when a visitor asks a question in chat or by microphone, so the visitor can ask her to explain what is already on screen.
+
+Atlas receives only fields supplied by the current page/provider response. She is instructed not to invent missing details. Last.fm listeners and plays remain Last.fm metrics; MusicBrainz album/EP totals remain indexed release-group counts, not a promise of a complete discography. Podcast listings do not include episode summaries unless the provider returns them. Context is validated and clipped by the server before being sent to the model; provider text is treated as reference data, not instructions. The OpenAI key remains server-side in the Supabase Edge Function secret.
