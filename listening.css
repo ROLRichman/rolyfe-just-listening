@@ -138,3 +138,5 @@
 .quick button:active{transform:translateY(3px);box-shadow:inset 0 2px 5px #0008,0 1px 0 #08120c}
 .quick .quick-transport button[aria-pressed="true"]{border-color:#9af0b1;color:#c8ffd3;background:linear-gradient(155deg,#245b39,#123522);box-shadow:inset 0 1px 0 #ffffff28,0 5px 0 #07150c,0 0 22px #73e79a35}
 @media(prefers-reduced-motion:reduce){.hero-art .disc,.hero-art .orbit,.quick button{transition:none!important}}
+
+@media(max-width:620px){footer{padding:22px 14px calc(132px + env(safe-area-inset-bottom,0px))!important}}
