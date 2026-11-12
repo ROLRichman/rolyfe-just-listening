@@ -124,3 +124,17 @@
 .artist-result small{line-height:1.4}
 @media(max-width:850px){.artist-results{grid-template-columns:minmax(0,1fr)}}
 \n/* Podcast episode playback */\n.podcast-episodes{margin-top:18px;padding:17px;border:1px solid #496650;border-radius:16px;background:#111d16}.podcast-episodes[hidden]{display:none}.podcast-episode-head{display:flex;justify-content:space-between;align-items:flex-start;gap:12px}.podcast-episode-head h3{margin:0}.episode-list{display:grid;gap:10px;margin-top:12px}.episode-card{display:grid;gap:8px;padding:12px;border:1px solid #ffffff18;border-radius:12px;background:#17251c;min-width:0}.episode-copy strong,.episode-copy small{display:block}.episode-copy strong{font-size:13px;overflow-wrap:anywhere}.episode-copy small{color:#9fb2a5;font-size:10px;margin-top:3px}.episode-copy p{margin:6px 0 0;color:#b4c4b8;font-size:11px}.episode-card audio{width:100%;height:38px}.pod-card .actions{display:flex;flex-wrap:wrap;align-items:center}.pod-card button:disabled{opacity:.55;cursor:wait}\n
+
+/* Signature 3D listening lounge and tactile transport controls */
+.hero-art{perspective:900px;isolation:isolate}
+.hero-art:before{content:"";position:absolute;inset:12% 16%;border:1px solid #a4e8bb44;border-radius:50%;transform:rotateX(67deg) rotateZ(-22deg);box-shadow:0 0 35px #8de8aa16;pointer-events:none}
+.orbit{width:76%;height:68%;transform:rotate(-24deg) rotateX(12deg);box-shadow:0 0 24px #8de8aa12;transition:transform .7s ease,box-shadow .7s ease}
+.disc{position:relative;z-index:1;transform:translateZ(38px);box-shadow:inset 9px 10px 22px #ffffff16,inset -12px -14px 28px #0008,0 22px 42px #0009,0 0 55px #7fe6a433;transition:transform .7s cubic-bezier(.2,.8,.2,1),box-shadow .7s ease}
+.hero-art.is-playing .disc{transform:translateZ(55px) rotateY(9deg) rotateX(5deg);box-shadow:inset 9px 10px 22px #ffffff1c,inset -12px -14px 28px #0008,0 28px 54px #000b,0 0 75px #7fe6a455}
+.hero-art.is-playing .orbit{transform:rotate(10deg) rotateX(18deg) scale(1.04);box-shadow:0 0 32px #8de8aa2b}
+.hero-art.is-playing .equalizer i{animation-duration:.42s}
+.quick .quick-transport button,.quick .quick-discovery button,.quick button{position:relative;border:1px solid #62846b;background:linear-gradient(155deg,#203b2b,#102018 72%);box-shadow:inset 0 1px 0 #ffffff20,0 5px 0 #08120c,0 9px 18px #0006;transition:transform .16s ease,box-shadow .16s ease,border-color .16s ease,filter .16s ease}
+.quick button:hover{transform:translateY(-2px);filter:brightness(1.13);box-shadow:inset 0 1px 0 #ffffff2a,0 7px 0 #08120c,0 13px 22px #0008}
+.quick button:active{transform:translateY(3px);box-shadow:inset 0 2px 5px #0008,0 1px 0 #08120c}
+.quick .quick-transport button[aria-pressed="true"]{border-color:#9af0b1;color:#c8ffd3;background:linear-gradient(155deg,#245b39,#123522);box-shadow:inset 0 1px 0 #ffffff28,0 5px 0 #07150c,0 0 22px #73e79a35}
+@media(prefers-reduced-motion:reduce){.hero-art .disc,.hero-art .orbit,.quick button{transition:none!important}}
