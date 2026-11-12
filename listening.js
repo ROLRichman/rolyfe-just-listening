@@ -15,7 +15,7 @@ const state={
 };
 const ARTIST_COLLECTIONS={
   headliners:["The Notorious B.I.G.","2Pac","Nas","Jay-Z","Big Pun","Fat Joe","Dr. Dre","Eminem","Snoop Dogg","Ice Cube","Lil Wayne","Andre 3000","LL Cool J","Beanie Sigel","Jadakiss"],
-  pioneers:["Grandmaster Flash","KRS-One","Slick Rick","Kool G Rap","Rakim","AZ","DJ Premier","Doug E. Fresh","Biz Markie","Roxanne Shanté","MC Lyte","Marley B","Marley Marl","D-Nice","Special Ed","Queen Latifah","Big Daddy Kane","Eric B. & Rakim"],
+  pioneers:["Grandmaster Flash","KRS-One","Slick Rick","Kool G Rap","Locksmith","Rakim","AZ","DJ Premier","Doug E. Fresh","Biz Markie","Roxanne Shanté","MC Lyte","Marley B","Marley Marl","D-Nice","Special Ed","Queen Latifah","Big Daddy Kane","Eric B. & Rakim"],
   east:["Jadakiss","The LOX","Styles P","Mobb Deep","Capone-N-Noreaga","Joey Bada$","Nas","AZ","Mic Geronimo","Group Home","Lost Boyz","Keith Murray","Redman","Papoose","RJ Payne","Locksmith"],
   groups:["The Roots","The Pharcyde","Das EFX","Group Home","Lost Boyz","Gang Starr","Brand Nubian","Boot Camp Clik","A Tribe Called Quest","De La Soul","Black Star","The Fugees","OutKast","Cocoa Brovaz","EPMD"],
   west:["Dr. Dre","Eminem","Snoop Dogg","Ice Cube","Kendrick Lamar","D Smoke","Dizzy Wright","Too Short","E-40","The Lady of Rage","Ras Kass","Xzibit","Warren G","Kurupt","The Game"],
@@ -24,7 +24,12 @@ const ARTIST_COLLECTIONS={
   rap_lyricists:["KRS-One","Slick Rick","Kool G Rap","Rakim","Nas","The Notorious B.I.G.","2Pac","AZ","Big Daddy Kane","Black Thought","Andre 3000","Eminem","Lupe Fiasco","Papoose","Locksmith","RJ Payne","Jadakiss","Styles P","Pharoahe Monch","Royce da 5'9\"","R.A. the Rugged Man","Brother Ali","Masta Ace","Common","Mos Def"],
   rnb_songwriters:["Stevie Wonder","Prince","Sade","D'Angelo","Erykah Badu","Jill Scott","Lauryn Hill","Maxwell","Alicia Keys","Mary J. Blige","Babyface","Smokey Robinson","Marvin Gaye","Curtis Mayfield","Raphael Saadiq","India.Arie","H.E.R.","Frank Ocean","The Weeknd","Miguel","Anderson .Paak","Brandy","Toni Braxton","Keri Hilson","Ne-Yo"],
   reggae_dancehall:["Bob Marley","Peter Tosh","Burning Spear","Beres Hammond","Buju Banton","Damian Marley","Stephen Marley","Chronixx","Protoje","Koffee","Vybz Kartel","Bounty Killer","Beenie Man","Shabba Ranks","Capleton","Sizzla","Toots and the Maytals","Gregory Isaacs","Dennis Brown","Sean Paul","Tarrus Riley","Jah Cure","Mavado","Popcaan","Shenseea"],
-  producers:["DJ Premier","Marley Marl","Dr. Dre","Pete Rock","J Dilla","RZA","Q-Tip","Large Professor","Madlib","The Alchemist","Just Blaze","No I.D.","Pharrell Williams","Timbaland","Kanye West","9th Wonder","DJ Khaled","Swizz Beatz","Prince Paul","Easy Mo Bee"]
+  producers:["DJ Premier","Marley Marl","Dr. Dre","Pete Rock","J Dilla","RZA","Q-Tip","Large Professor","Madlib","The Alchemist","Just Blaze","No I.D.","Pharrell Williams","Timbaland","Kanye West","9th Wonder","DJ Khaled","Swizz Beatz","Prince Paul","Easy Mo Bee"],
+  era_1975_89:["DJ Kool Herc","Coke La Rock","Grandmaster Flash","Melle Mel","Afrika Bambaataa","Kurtis Blow","Busy Bee","Funky Four Plus One","Treacherous Three","The Cold Crush Brothers","Run-D.M.C.","LL Cool J","KRS-One","Rakim","Big Daddy Kane","Slick Rick","Kool G Rap","MC Lyte","Roxanne Shanté","Queen Latifah","Salt-N-Pepa","Public Enemy","Chuck D","Ice-T","Too Short","Scarface"],
+  era_1990s:["Nas","The Notorious B.I.G.","2Pac","Jay-Z","Black Thought","Bahamadia","Lauryn Hill","Mos Def","Talib Kweli","Common","Pharoahe Monch","Jadakiss","Styles P","Ghostface Killah","Raekwon","GZA","Method Man","Redman","Eminem","Andre 3000","Big Pun","Canibus","AZ","Masta Ace","E-40","Snoop Dogg","Ice Cube","Queen Latifah","MC Lyte"],
+  era_2000s:["Lupe Fiasco","Kendrick Lamar","J. Cole","Papoose","Royce da 5'9\"","R.A. the Rugged Man","Brother Ali","Elzhi","Phonte","Sean Price","MF DOOM","Aesop Rock","Immortal Technique","Jean Grae","Rapsody","Saigon","Jadakiss","Styles P","Black Thought","Bun B","Scarface","Lil Wayne","T.I.","Killer Mike","Rick Ross"],
+  era_2010s:["Kendrick Lamar","J. Cole","Joey Bada$","Denzel Curry","JID","Rapsody","Little Simz","Dave East","Locksmith","RJ Payne","D Smoke","Mick Jenkins","Saba","Noname","Che Noir","Avelino","Ocean Wisdom","Dave","Skepta","Stormzy","Benny the Butcher","Conway the Machine","Westside Gunn","Freddie Gibbs","Run The Jewels"],
+  era_2020s:["Little Simz","Rapsody","JID","Kendrick Lamar","Denzel Curry","J. Cole","Doechii","Megan Thee Stallion","Noname","Che Noir","Sa-Roc","Tierra Whack","Rico Nasty","Saba","EarthGang","Benny the Butcher","Conway the Machine","Westside Gunn","RJ Payne","Locksmith","Dave","Little Simz","Central Cee","GloRilla","Loyle Carner"]
 };
 const STARTER_ARTISTS=Object.values(ARTIST_COLLECTIONS).flat();
 function readSaved(){try{const x=JSON.parse(localStorage.getItem(SAVED_KEY)||"[]");return Array.isArray(x)?x:[]}catch(_){return[]}}
@@ -158,9 +163,19 @@ function act(action){
     if(previous){previous.click();setAtlasMessage("Going back to the previous radio station.",true);}
     else{launchRadio();setAtlasMessage("Your Music Stations panel is ready. Choose a station to start listening.",true);}
   }else if(action==="pause"){
-    const play=radio("rolRadioPlay");
-    if(play){play.click();setAtlasMessage(radio("rolRadioAudio")?.paused?"Resuming your station.":"Pausing the radio.",true);}
-    else{launchRadio();setAtlasMessage("Open Music Stations and choose a station to play.",true);}
+    const audio=radio("rolRadioAudio"),play=radio("rolRadioPlay");
+    if(audio&&!audio.paused){
+      audio.pause();
+      setAtlasMessage("Radio paused. Tap Resume whenever you're ready.",true);
+    }else if(audio&&audio.src){
+      audio.play().then(()=>setAtlasMessage("Your station is playing again.",true)).catch(()=>{launchRadio();setAtlasMessage("Tap Play in Music Stations to resume this broadcaster.",true);});
+    }else if(play){
+      play.click();
+      setAtlasMessage("Opening your radio controls. Choose a station if one is not selected yet.",true);
+    }else{
+      launchRadio();setAtlasMessage("Open Music Stations and choose a station to play.",true);
+    }
+    updateQuickPlayback();
   }else if(action==="next"){
     const next=radio("rolRadioNext");
     if(next){next.click();setAtlasMessage("I'm moving to the next station in the live radio list. It may take a moment to connect.",true);}
@@ -174,6 +189,18 @@ function act(action){
     if(menu){menu.open=true;menu.scrollIntoView({behavior:"smooth",block:"center"});}
     setAtlasMessage("What sounds good today? Choose a genre, browse podcasts, or let me surprise you.",true);
   }
+}
+function updateQuickPlayback(){
+  const audio=radio("rolRadioAudio"),button=$("quickPauseToggle"),art=document.querySelector(".hero-art");
+  const playing=!!audio&&!audio.paused;
+  const hasStation=!!audio&&!!audio.src;
+  if(button){
+    button.textContent=playing?"Ⅱ Pause":(hasStation?"▶ Resume":"▶ Play");
+    button.setAttribute("aria-pressed",String(playing));
+    button.setAttribute("aria-label",playing?"Pause radio":"Resume radio");
+    button.title=playing?"Pause the current station":(hasStation?"Resume the current station":"Open radio and choose a station");
+  }
+  if(art)art.classList.toggle("is-playing",playing);
 }
 function saved(key){return state.saved.some(item=>item.key===key);}
 function persistSaved(){try{localStorage.setItem(SAVED_KEY,JSON.stringify(state.saved));}catch(_){setAtlasMessage("I couldn't save that on this device. Your browser storage may be full or disabled.");}}
@@ -729,6 +756,9 @@ function bind(){
   $("loadMoreTracks").addEventListener("click",()=>loadTrending(state.trend,true));
   document.querySelectorAll("[data-trend]").forEach(button=>button.addEventListener("click",()=>loadTrending(button.dataset.trend)));
   document.querySelectorAll("[data-atlas-action]").forEach(button=>button.addEventListener("click",()=>act(button.dataset.atlasAction)));
+  // Media events are captured because HTMLMediaElement play/pause events do not bubble.
+  ["play","playing","pause","ended","emptied"].forEach(type=>document.addEventListener(type,updateQuickPlayback,true));
+  updateQuickPlayback();
   $("trendingGrid").addEventListener("click",event=>{
     const preview=event.target.closest("[data-preview-track]");
     if(preview){
