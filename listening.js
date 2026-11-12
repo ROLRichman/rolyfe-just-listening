@@ -247,6 +247,33 @@ async function lastfm(method,extra={}){
   if(!response.ok||body.error)throw new Error(body.error||"Last.fm discovery is temporarily unavailable.");
   return body.data||{};
 }
+async function verifyReggaeTrack(track){
+  try{
+    const term=[track.artist,track.name].filter(Boolean).join(" ");
+    const url="https://itunes.apple.com/search?"+new URLSearchParams({term,entity:"song",media:"music",limit:"8",country:"US"});
+    const response=await fetch(url,{headers:{Accept:"application/json"}});
+    if(!response.ok)return false;
+    const data=await response.json();
+    const wantedTitle=normalizeCatalogText(track.name),wantedArtist=normalizeCatalogText(track.artist);
+    const match=(data.results||[]).find(item=>{
+      const title=normalizeCatalogText(item.trackName),artist=normalizeCatalogText(item.artistName);
+      return title===wantedTitle&&(artist===wantedArtist||artist.includes(wantedArtist)||wantedArtist.includes(artist));
+    });
+    return !!match&&/reggae/i.test(String(match.primaryGenreName||match.genreName||""));
+  }catch(_){return false;}
+}
+async function filterReggaeTracks(list){
+  const kept=[];
+  let cursor=0;
+  const workers=Array.from({length:4},async()=>{
+    while(cursor<list.length){
+      const index=cursor++,track=list[index];
+      if(await verifyReggaeTrack(track))kept[index]=track;
+    }
+  });
+  await Promise.all(workers);
+  return kept.filter(Boolean);
+}
 async function loadTrending(tag=state.trend,append=false){
   if(state.trackLoading)return;
   state.atlasFocus="trending";
@@ -263,8 +290,10 @@ async function loadTrending(tag=state.trend,append=false){
     const payload=tag==="all"?await lastfm("chart.getTopTracks",query):await lastfm("tag.getTopTracks",{...query,tag});
     const root=payload.tracks||payload.toptracks||{};
     const list=asArray(root.track).map(item=>({name:item.name,artist:typeof item.artist==="string"?item.artist:item.artist?.name||""})).filter(item=>item.name);
+    // Last.fm tags can be noisy: independently verify Reggae/Dancehall shelf entries against Apple’s catalog genre before showing them.
+    const verifiedList=(tag==="reggae"||tag==="dancehall")?await filterReggaeTracks(list):list;
     const seen=new Set(state.tracks.map(track=>trackKey(track)));
-    const fresh=list.filter(track=>!seen.has(trackKey(track)));
+    const fresh=verifiedList.filter(track=>!seen.has(trackKey(track)));
     state.tracks=append?[...state.tracks,...fresh]:fresh;
     const totalPages=Number(root["@attr"]?.totalPages||root["@attr"]?.totalpages||0);
     state.trackPages=totalPages?Math.min(10,totalPages):(list.length>=TRENDING_PAGE_SIZE?10:page);
