@@ -179,9 +179,8 @@ function act(action){
   }else if(action==="next"){
     const next=radio("rolRadioNext");
     if(next){
-      if(!radio("rolRadioPanel")?.classList.contains("open"))launchRadio();
       next.click();
-      setAtlasMessage("Moving to the next station in your live radio list. The station panel is open so you can see the selection.",true);
+      setAtlasMessage("Moving to the next station in your live radio list. It may take a moment to connect.",true);
     }else{launchRadio();setAtlasMessage("Your live radio panel is open. Choose a station and press Play to start the music.",true);}
   }else if(action==="save_station"){
     if(!radio("rolRadioPanel")?.classList.contains("open"))launchRadio();
