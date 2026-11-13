@@ -5,7 +5,7 @@
 <meta name="description" content="RO’Lyfe JUST LISTENING — live radio, trending music, podcasts and your personal listening list.">
 <title>RO’Lyfe JUST LISTENING™</title>
 <link rel="stylesheet" href="listening.css?v=3d-lounge-controls-20261112-1">
-<script defer src="listening.js?v=lyricist-lounge-20261112-1"></script>
+<script defer src="listening.js?v=atlas-radio-actions-20261113-1"></script>
 <script defer src="https://rolrichman.github.io/rolyfe-egaming/shared/radio-player.js"></script>
 </head>
 <body>
@@ -66,7 +66,7 @@
 <aside class="atlas" id="atlasPanel" aria-hidden="true"><div class="atlas-head"><span class="avatar">A</span><div><b>Atlas</b><small>RO’Lyfe Listening Guide</small></div><i></i><button id="closeAtlas" type="button" aria-label="Minimize Atlas conversation" title="Minimize Atlas · your conversation stays here">−</button></div><div class="atlas-power-row"><span>Atlas assistant</span><button id="atlasPower" type="button" aria-pressed="true">AI ON · Turn off</button></div><p id="atlasMessage">Tell me what you want to hear. I can find music, stations, artists and podcasts.</p>
 <div id="atlasChatLog" class="atlas-chat-log" role="log" aria-live="polite" aria-label="Conversation with Atlas"></div>
 <form id="atlasChatForm" class="atlas-chat-form"><input id="atlasChatInput" type="text" maxlength="500" autocomplete="off" placeholder="Ask Atlas to find or play something…" aria-label="Message Atlas"><button id="atlasSend" type="submit">Send</button></form>
-<div class="atlas-actions"><button data-atlas-action="next">⏭ Next</button><button data-atlas-action="trending">↗ Popular &amp; trending</button><button data-atlas-action="pick">♫ Pick a track</button></div><div class="voice-controls"><label for="atlasLanguage">Voice language</label><select id="atlasLanguage" aria-label="Atlas voice language"><option value="en-US">English</option></select><label class="volume-label" for="atlasVolume">Atlas volume <span id="atlasVolumeValue">65%</span></label><input id="atlasVolume" type="range" min="0" max="100" value="65" step="5" aria-label="Atlas speaking volume"><div class="voice-buttons"><button id="atlasSpeak">🔊 Speak</button><button id="atlasTalk">🎙 Talk to Atlas</button></div><small id="voiceStatus">Choose a voice language and volume</small></div></aside>
+<div class="atlas-actions"><div class="atlas-primary-actions"><button data-atlas-action="next" type="button">⏭ Next station</button><button data-atlas-action="save_station" type="button" aria-pressed="false">♡ Save station</button></div><div class="atlas-discovery-actions"><button data-atlas-action="trending" type="button">↗ Popular &amp; trending</button><button data-atlas-action="pick" type="button">♫ Pick a track</button></div></div><div class="voice-controls"><label for="atlasLanguage">Voice language</label><select id="atlasLanguage" aria-label="Atlas voice language"><option value="en-US">English</option></select><label class="volume-label" for="atlasVolume">Atlas volume <span id="atlasVolumeValue">65%</span></label><input id="atlasVolume" type="range" min="0" max="100" value="65" step="5" aria-label="Atlas speaking volume"><div class="voice-buttons"><button id="atlasSpeak">🔊 Speak</button><button id="atlasTalk">🎙 Talk to Atlas</button></div><small id="voiceStatus">Choose a voice language and volume</small></div></aside>
 <button class="back-top" id="backToTop" type="button" aria-label="Back to top">↑ <span>Back to top</span></button>
 
 </body></html>
