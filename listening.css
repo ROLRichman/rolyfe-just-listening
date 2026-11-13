@@ -140,3 +140,12 @@
 @media(prefers-reduced-motion:reduce){.hero-art .disc,.hero-art .orbit,.quick button{transition:none!important}}
 
 @media(max-width:620px){footer{padding:22px 14px calc(132px + env(safe-area-inset-bottom,0px))!important}}
+
+
+/* Atlas quick actions: radio transport and saving stay together. */
+.atlas-primary-actions,.atlas-discovery-actions{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.atlas-primary-actions button{min-height:42px;border-color:#5a8b67;background:linear-gradient(145deg,#1b3b27,#102018);text-align:center;font-size:11px;font-weight:900}
+.atlas-primary-actions button:first-child{background:linear-gradient(145deg,#28553a,#173322);color:#dff8e4}
+.atlas-primary-actions button[aria-pressed="true"],.atlas-primary-actions button.is-saved{border-color:#b7a2ee;background:linear-gradient(145deg,#34294d,#211b32);color:#e0d5ff}
+.atlas-discovery-actions button{min-height:36px;text-align:center}
+.atlas-actions button:focus-visible{outline:2px solid var(--green);outline-offset:2px}
