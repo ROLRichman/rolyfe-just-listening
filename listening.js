@@ -218,11 +218,19 @@ function syncAtlasStationSaveButton(){
   button.title=ready?(isSaved?"Remove the current station from Saved Stations":"Save the current station on this device"):"Choose or play a station in Music Stations first";
 }
 function observeAtlasStationSaveButton(){
-  const source=radio("rolRadioSaveStation");
-  if(!source){syncAtlasStationSaveButton();return;}
-  syncAtlasStationSaveButton();
-  const observer=new MutationObserver(syncAtlasStationSaveButton);
-  observer.observe(source,{attributes:true,childList:true,characterData:true,subtree:true});
+  const attach=()=>{
+    const source=radio("rolRadioSaveStation");
+    if(!source)return false;
+    syncAtlasStationSaveButton();
+    const observer=new MutationObserver(syncAtlasStationSaveButton);
+    observer.observe(source,{attributes:true,childList:true,characterData:true,subtree:true});
+    return true;
+  };
+  if(attach())return;
+  const mountObserver=new MutationObserver(()=>{
+    if(attach())mountObserver.disconnect();
+  });
+  mountObserver.observe(document.body,{childList:true,subtree:true});
 }
 function updateQuickPlayback(){
   const audio=radio("rolRadioAudio"),button=$("quickPauseToggle"),art=document.querySelector(".hero-art");
