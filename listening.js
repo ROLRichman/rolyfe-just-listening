@@ -178,8 +178,24 @@ function act(action){
     updateQuickPlayback();
   }else if(action==="next"){
     const next=radio("rolRadioNext");
-    if(next){next.click();setAtlasMessage("I'm moving to the next station in the live radio list. It may take a moment to connect.",true);}
-    else{launchRadio();setAtlasMessage("Your live radio panel is open. Choose a station and press Play to start the music.",true);}
+    if(next){
+      if(!radio("rolRadioPanel")?.classList.contains("open"))launchRadio();
+      next.click();
+      setAtlasMessage("Moving to the next station in your live radio list. The station panel is open so you can see the selection.",true);
+    }else{launchRadio();setAtlasMessage("Your live radio panel is open. Choose a station and press Play to start the music.",true);}
+  }else if(action==="save_station"){
+    if(!radio("rolRadioPanel")?.classList.contains("open"))launchRadio();
+    const saveButton=radio("rolRadioSaveStation");
+    if(!saveButton||saveButton.disabled){
+      syncAtlasStationSaveButton();
+      setAtlasMessage("Choose or play a station in Music Stations first. Then tap Save station here to keep it on this device.",true);
+      return;
+    }
+    const wasSaved=saveButton.getAttribute("aria-pressed")==="true";
+    const stationName=(radio("rolRadioStation")?.textContent||"this station").trim();
+    saveButton.click();
+    syncAtlasStationSaveButton();
+    setAtlasMessage(wasSaved?"Removed "+stationName+" from your saved stations.":"Saved "+stationName+" to your listening list on this device.",true);
   }else if(action==="trending"){
     $("discover").scrollIntoView({behavior:"smooth"});
     loadTrending(state.trend);
@@ -189,6 +205,24 @@ function act(action){
     if(menu){menu.open=true;menu.scrollIntoView({behavior:"smooth",block:"center"});}
     setAtlasMessage("What sounds good today? Choose a genre, browse podcasts, or let me surprise you.",true);
   }
+}
+function syncAtlasStationSaveButton(){
+  const button=document.querySelector('[data-atlas-action="save_station"]');
+  if(!button)return;
+  const source=radio("rolRadioSaveStation");
+  const isSaved=source?.getAttribute("aria-pressed")==="true";
+  const ready=!!source&&!source.disabled;
+  button.textContent=isSaved?"♥ Saved · Remove":"♡ Save station";
+  button.setAttribute("aria-pressed",String(isSaved));
+  button.classList.toggle("is-saved",isSaved);
+  button.title=ready?(isSaved?"Remove the current station from Saved Stations":"Save the current station on this device"):"Choose or play a station in Music Stations first";
+}
+function observeAtlasStationSaveButton(){
+  const source=radio("rolRadioSaveStation");
+  if(!source){syncAtlasStationSaveButton();return;}
+  syncAtlasStationSaveButton();
+  const observer=new MutationObserver(syncAtlasStationSaveButton);
+  observer.observe(source,{attributes:true,childList:true,characterData:true,subtree:true});
 }
 function updateQuickPlayback(){
   const audio=radio("rolRadioAudio"),button=$("quickPauseToggle"),art=document.querySelector(".hero-art");
@@ -785,6 +819,7 @@ function bind(){
   $("loadMoreTracks").addEventListener("click",()=>loadTrending(state.trend,true));
   document.querySelectorAll("[data-trend]").forEach(button=>button.addEventListener("click",()=>loadTrending(button.dataset.trend)));
   document.querySelectorAll("[data-atlas-action]").forEach(button=>button.addEventListener("click",()=>act(button.dataset.atlasAction)));
+  observeAtlasStationSaveButton();
   // Media events are captured because HTMLMediaElement play/pause events do not bubble.
   ["play","playing","pause","ended","emptied"].forEach(type=>document.addEventListener(type,updateQuickPlayback,true));
   updateQuickPlayback();
