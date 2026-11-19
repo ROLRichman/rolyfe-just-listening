@@ -233,3 +233,11 @@ Atlas receives only fields supplied by the current page/provider response. She i
 - The Hip-Hop Vault now offers curated decade collections from 1975–1989 through the 2020s–Now, alongside its role- and region-based collections. These are editorial discovery shelves, not a claim to list every lyricist or establish an exact debut year for every artist. Artist search remains available for names outside the picks.
 - Reggae and Dancehall discovery results are checked against Apple’s public music catalog genre metadata before display. Apple’s broad catalog labels do not always distinguish roots reggae from dancehall, so the Dancehall shelf combines its Last.fm tag discovery with a Reggae catalog check; it is a tighter filter, not a perfect subgenre classifier. Tracks that cannot be matched are left out rather than guessed.
 - The mobile footer retains extra bottom clearance for floating controls so the Entertainment Network link remains easier to reach.
+
+
+## Shared RO’Lyfe front-door preview access
+
+- This site's public front door uses the common remembered-device gateway key `rolyfe.shared.preview.access.v1`.
+- Entering once on any configured RO’Lyfe media front door on `rolrichman.github.io` lets visitors move among Entertainment, Live Sports, Gaming, Vision Hub and JUST LISTENING without another preview prompt on the same browser.
+- This is a convenience preview, not real authentication or a security barrier. It does not protect private content, APIs, or page source. Secure account sign-in / single sign-on is a later phase.
+- The welcome screen announces a planned first-three-months-free launch offer; confirm final commercial terms before accepting payments or publishing final pricing.
